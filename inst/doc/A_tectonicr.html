@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Tobias Stephan" />
+
+
+<title>1. Introduction to tectonicr</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">1. Introduction to tectonicr</h1>
+<h4 class="author">Tobias Stephan</h4>
+
+
+
+<p><strong>tectonicr</strong> is a free and open-source R package for
+modeling and analyzing the direction of the maximum horizontal stress
+based on the empirical link between the direction of intraplate stress
+and the direction of the relative motion of neighboring plates.</p>
+<div id="theoretical-background" class="section level2">
+<h2>Theoretical background</h2>
+<p>The theory of intraplate tectonics (Wdowinski 1998) allows for
+calculating the first-order intraplate deformation induced by horizontal
+displacement of deformable plate boundaries (Stephan et al., 2023). It
+is based on empirical link between the directions of relative plate
+motion and the displacement and deformation fields within a plate
+interior adjacent to three types of deformable plate boundaries:
+inward-, outward-, and tangential-displaced boundaries. The model
+predicts the direction of intraplate displacement, displacement rate,
+strain, and stress fields in terms of small circles, great circles, and
+45<span class="math inline">\(^{\circ}\)</span> loxodromes around the
+pole of rotation of two adjacent plates. According to the theory, the
+principal axis of the maximum horizontal stress follows small circles
+for inward-displaced boundaries, great circles for outward-displaced
+boundaries, and loxodromes for tangential-displaced boundaries.</p>
+<p>The theory assumes that the first-order intraplate deformation is
+predominantly induced by horizontal forces acting on plate boundaries
+and by buoyancy forces that arise from lateral density variations
+between mid-ocean ridges and plate interiors (ridge push).</p>
+<div id="inward-outward-and-tangential-displaced-boundaries" class="section level3">
+<h3>Inward, Outward and Tangential Displaced Boundaries</h3>
+<p><strong>Inward-moving plate boundaries</strong> induce compressional
+horizontal tractions from the plate boundary towards the plate’s
+interior along the direction of relative plate motion. These
+compressional tractions are produced by forces related to subduction,
+collision, or ridge-push. Thus, stresses across convergent plate
+boundaries are characterized by the dominance of thrusting or
+strike-slip faulting (<span class="math inline">\(\sigma_1 \approx
+\sigma_{Hmax}\)</span>) with <span class="math inline">\(\sigma_{Hmax}\)</span> (maximum horizontal stress)
+trending parallel to the plate convergence, i.e. parallel to <em>small
+circles</em> around the pole of the relative plate motion (pole of
+rotation, PoR).</p>
+<p><strong>Outward moving plate boundaries</strong> produce tensional
+tractions and displacements directed away from the plate interior. Along
+spreading ridges and intracontinental rifting stresses are dominated by
+normal faulting (<span class="math inline">\(\sigma_1 \approx
+\sigma_{vertical}\)</span>, <span class="math inline">\(\sigma_2 \approx
+\sigma_{Hmax}\)</span>) with <span class="math inline">\(\sigma_{Hmax}\)</span> trending perpendicular to
+the plate motion trajectories (i.e. along <em>great circles</em>). In
+the case of intracontinental setting, stresses and displacements may be
+associated to slab-retreat, back-arc extension, or the release of the
+excess of gravitational potential energy stored in thickened crust
+through, e.g., gravitational collapse.</p>
+<p>Along transform boundaries (<strong>tangential displaced
+boundaries</strong>), the two neighboring plates exert shear tractions
+tangential to the orientation of the boundary (Forsyth and Uyeda, 1975).
+Faulting and displacement adjacent to these plate boundaries are
+characterized by strike-slip parallel to the plate motion, and thus, the
+principal axes of maximum and minimum stress are orientated at an angle
+of c. 45<span class="math inline">\(^{\circ}\)</span> to the plate
+motion trajectory. Geometrically, <span class="math inline">\(\sigma_{Hmax}\)</span> direction follows along
+45<span class="math inline">\(^{\circ}\)</span> <em>loxodromes</em>
+(lines of constant bearing) which diverge —depending on the sense of the
+transform boundary— clockwise or counterclockwise from the relative PoR
+and intersect both small and great circles at an angle of 45<span class="math inline">\(^{\circ}\)</span>.</p>
+</div>
+</div>
+<div id="theoretical-direction-of-horizontal-stress-and-deviation-from-the-measured-stress" class="section level2">
+<h2>Theoretical direction of Horizontal Stress and Deviation From the
+Measured Stress</h2>
+<!-- **tectonicr** basically calculates the bearing from a point of  -->
+<!-- interest to a given Euler pole of the relative plate motion by the formula: -->
+<!-- ```{=tex} -->
+<!-- \begin{equation}  -->
+<!--   \theta = \arctan2 (\sin \Delta\lambda * \cos\psi_2, \cos\psi_1 \sin\psi_1-\sin\psi_1 \cos\psi_2 \cos\Delta\lambda) -->
+<!-- \end{equation} -->
+<!-- ``` -->
+<!-- where $\psi_1$, $\lambda_1$ are the longitude and latitude of the point,  -->
+<!-- $\psi_2$, $\lambda_2$ the longitude and latitude of the Euler pole  -->
+<!-- ($\Delta\lambda$ is the difference in longitude).  -->
+<!-- > The bearing $\theta$ is the orientation of a great circle that passes through  -->
+<!-- the point and the Euler pole. Thus, it reflects the theoretical direction of  -->
+<!-- $\sigma_{Hmax}$ that follows great circles trajectories.  -->
+<!-- Small circle directions then are $90^{\circ}$ and loxodrome directions  -->
+<!-- are $\pm45^{\circ}$ to $\theta$. 
+
+<!-- --- -->
+<p>In <strong>tectonicr</strong>, these directions can modeled by the
+following steps:</p>
+<p>First, load the package:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(tectonicr)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># load ggplot library</span></span></code></pre></div>
+<p>Next, we need to specify coordinates of the Pole of Rotation (PoR) to
+get the directions of the great circles, small circles, and loxodromes
+around the PoR at the given point (e.g. at 45<span class="math inline">\(^{\circ}\)</span>N/20<span class="math inline">\(^{\circ}\)</span>E).</p>
+<p>For example, the PoR has the coordinates: 90<span class="math inline">\(^{\circ}\)</span>N/0<span class="math inline">\(^{\circ}\)</span>E. Then <span class="math inline">\(\sigma_{Hmax}\)</span> following great and small
+circles and loxodromes geometries can be modeled with
+<code>model_shmax()</code>:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Example:</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>point <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lat =</span> <span class="dv">45</span>, <span class="at">lon =</span> <span class="dv">20</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>por <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lat =</span> <span class="dv">90</span>, <span class="at">lon =</span> <span class="dv">0</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">model_shmax</span>(point, por)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">print</span>(model)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;   sc ld.ccw gc ld.cw</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; 1 90    135  0    45</span></span></code></pre></div>
+<p>If there is an observed stress direction at the point, e.g. azimuth
+of <span class="math inline">\(\sigma_{Hmax}\)</span> is 90<span class="math inline">\(^{\circ}\)</span>, the deviation from the modeled
+stress directions can be calculated through
+<code>deviation_shmax()</code>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>deviation <span class="ot">&lt;-</span> <span class="fu">deviation_shmax</span>(model, <span class="dv">90</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">print</span>(deviation)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt;   dev.gc dev.sc dev.ld.cw dev.ld.ccw</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; 1    -90      0       -45         45</span></span></code></pre></div>
+</div>
+<div id="quantitative-comparison-between-predicted-and-observed-maximum-horizontal-stress" class="section level2">
+<h2>Quantitative Comparison Between Predicted and Observed Maximum
+Horizontal Stress</h2>
+<p>The <strong>normalized</strong> <span class="math inline">\(\chi^2\)</span> test quantitatively compares the
+predicted (<code>model_shmax()</code>) and observed <span class="math inline">\(\sigma_{Hmax}\)</span> azimuth relative to the
+reported <span class="math inline">\(\sigma\)</span> standard deviation
+(Wdowinski 1998).</p>
+<!-- ```{=tex} -->
+<!-- \begin{equation}  -->
+<!--   \textrm{Norm} \chi^2_i =  -->
+<!--  \frac{\sum_{i=1}^{n} \left(\frac{\alpha_i - \alpha_{predict}}{\sigma_i}\right)^2} -->
+<!--  {\sum_{i=1}^{n} \left(\frac{90}{\sigma_i}\right)^2} \end{equation} -->
+<!-- ``` -->
+<!-- with $\alpha_i$ and $\alpha_{predicted}$ are the observed and predicted -->
+<!-- directions of $\sigma_{Hmax}$ with respect to the pole of rotation,  -->
+<!-- respectively. -->
+<!-- The $\sigma_i$ parameter is the reported uncertainty of the observed -->
+<!-- azimuth and $M$ is the number of observations that are used in each -->
+<!-- test. -->
+<p>The normalized <span class="math inline">\(\chi^2\)</span> test
+yields a number in the range between 0-1 which indicates the quality of
+the fit. Low values of the normalized <span class="math inline">\(\chi^2\)</span> test (<span class="math inline">\(\leq\)</span> 0.15 indicate good agreement between
+predicted and observed directions. High values (<span class="math inline">\(&gt;\)</span> 0.7) indicate a systematic misfit
+between predicted and observed directions of about 90<span class="math inline">\(^{\circ}\)</span>. Random distribution of <span class="math inline">\(\sigma_{Hmax}\)</span> directions results in Norm
+<span class="math inline">\(\chi^2 = 0.33\)</span></p>
+<p>The test can be run using <code>norm_chisq(obs, prd, unc)</code>.
+<code>obs</code> is a numeric vector with the observed <span class="math inline">\(\sigma_{Hmax}\)</span>; <code>prd</code> is a
+vector with the predicted <span class="math inline">\(\sigma_{Hmax}\)</span> (vector must be of length
+of <code>obs</code>); and <code>unc</code> is the uncertainty of
+observed <span class="math inline">\(\sigma_{Hmax}\)</span> (either
+numeric vector of length of <code>obs</code> or a number).</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;nuvel1&quot;</span>) <span class="co"># import example data set for Euler rotations</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>por <span class="ot">&lt;-</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">subset</span>(nuvel1, nuvel1<span class="sc">$</span>plate.rot <span class="sc">==</span> <span class="st">&quot;na&quot;</span>) <span class="co"># North America relative to Pacific plate</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>point <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lat =</span> <span class="dv">45</span>, <span class="at">lon =</span> <span class="dv">20</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>prd <span class="ot">&lt;-</span> <span class="fu">model_shmax</span>(point, por)</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">norm_chisq</span>(<span class="at">obs =</span> <span class="dv">90</span>, prd<span class="sc">$</span>sc, <span class="at">unc =</span> <span class="dv">10</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [1] 0.2790849</span></span></code></pre></div>
+</div>
+<div id="models-of-current-plate-motion" class="section level1">
+<h1>Models of current plate motion</h1>
+<p>The plate motions relative to the Pacific plate according to the
+NUVEL-1A model (DeMets et al. 1990) are included in the package and can
+be imported through:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;nuvel1&quot;</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">head</span>(nuvel1)</span></code></pre></div>
+<p>Other current plate motion models, in particulars NNR-MORVEL-56,
+GSRM2.1, REVEL, PB2002, and HS3-NUVEL1A, are available through</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;cpm_models&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">head</span>(cpm_models)</span></code></pre></div>
+<p>Any desired relative plate motion can be extracted via the
+following:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>gsrm <span class="ot">&lt;-</span> <span class="fu">subset</span>(cpm_models, model <span class="sc">==</span> <span class="st">&quot;GSRM2.1&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">equivalent_rotation</span>(gsrm, <span class="at">rot =</span> <span class="st">&quot;na&quot;</span>, <span class="at">fixed =</span> <span class="st">&quot;eu&quot;</span>)</span></code></pre></div>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<p>DeMets, C., R. G. Gordon, D. F. Argus, and S. Stein. 1990. “Current
+Plate Motions” <em>Geophysical Journal International</em> 101 (2):
+425–78. doi: <a href="https://doi.org/10.1111/j.1365-246x.1990.tb06579.x">10.1111/j.1365-246x.1990.tb06579.x</a></p>
+<p>Forsyth, D., and S. Uyeda. 1975. “On the Relative Importance of the
+Driving Forces of Plate Motion” <em>Geophysical Journal
+International</em> 43 (1): 163–200. doi: <a href="https://doi.org/10.1111/j.1365-246x.1975.tb00631.x">10.1111/j.1365-246x.1975.tb00631.x</a></p>
+<p>Stephan, T., Enkelmann, E., and Kroner, U. (2023). “Analyzing the
+horizontal orientation of the crustal stress adjacent to plate
+boundaries” <em>Scientific Reports</em> (13), 15590. <a href="doi:%5B10.1038/s41598-023-42433-2" class="uri">doi:[10.1038/s41598-023-42433-2</a>](<a href="https://doi.org/10.1038/s41598-023-42433-2" class="uri">https://doi.org/10.1038/s41598-023-42433-2</a>)</p>
+<p>Wdowinski, Shimon. 1998. “A Theory of Intraplate Tectonics”
+<em>Journal of Geophysical Research: Solid Earth</em> 103 (B3): 5037–59.
+doi: 10.1029/97jb03390.
+<!---[10.1029/97jb03390](https://doi.org/10.1029/97JB03390).--></p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
