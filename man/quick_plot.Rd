@@ -19,8 +19,9 @@ either a numeric vector or a number}
 \item{regime}{character vector. The stress
 regime (following the classification of the World Stress Map)}
 
-\item{width}{integer. window width (in number of observations) for moving average
-of the azimuths, circular dispersion, and Norm Chi-square statistics. If \code{NULL}, an optimal width will be estimated.}
+\item{width}{integer. window width (in number of observations) for moving
+average of the azimuths, circular dispersion, and Norm Chi-square statistics.
+If \code{NULL}, an optimal width will be estimated.}
 }
 \value{
 four R base plots
@@ -30,7 +31,8 @@ Creates a set of plots including
 the azimuth as a function of the distance to the plate boundary,
 the Norm Chi-squared as a function of the distance to the plate boundary,
 the circular distance (and dispersion) a function of the distance to the
-plate boundary, and a rose diagram of the frequency distribution of the azimuths.
+plate boundary, and a rose diagram of the frequency distribution of the
+azimuths.
 }
 \details{
 Plot 1 shows the transformed azimuths as a function of the distance to the
@@ -57,9 +59,10 @@ plate_boundary <- subset(plates, plates$pair == "na-pa")
 data("san_andreas")
 res <- PoR_shmax(san_andreas, na_pa, "right")
 d <- distance_from_pb(san_andreas, na_pa, plate_boundary, tangential = TRUE)
-quick_plot(res$azi.PoR, abs(d), res$prd, san_andreas$unc, san_andreas$regime)
+quick_plot(res$azi.PoR, d, res$prd, san_andreas$unc, san_andreas$regime)
 }
 \seealso{
 \code{\link[=PoR_shmax]{PoR_shmax()}}, \code{\link[=distance_from_pb]{distance_from_pb()}}, \code{\link[=circular_mean]{circular_mean()}},
-\code{\link[=circular_dispersion]{circular_dispersion()}}, \code{\link[=confidence_angle]{confidence_angle()}}, \code{\link[=norm_chisq]{norm_chisq()}}, \code{\link[=weighted_rayleigh]{weighted_rayleigh()}}
+\code{\link[=circular_dispersion]{circular_dispersion()}}, \code{\link[=confidence_angle]{confidence_angle()}}, \code{\link[=norm_chisq]{norm_chisq()}},
+\code{\link[=weighted_rayleigh]{weighted_rayleigh()}}
 }

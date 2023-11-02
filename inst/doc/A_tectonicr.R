@@ -21,8 +21,9 @@ print(deviation)
 
 ## ----shmax_test, echo=TRUE----------------------------------------------------
 data("nuvel1") # import example data set for Euler rotations
-por <-
-  subset(nuvel1, nuvel1$plate.rot == "na") # North America relative to Pacific plate
+por <- subset(
+  nuvel1, nuvel1$plate.rot == "na"
+) # North America relative to Pacific plate
 point <- data.frame(lat = 45, lon = 20)
 
 prd <- model_shmax(point, por)

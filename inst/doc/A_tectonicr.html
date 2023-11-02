@@ -483,13 +483,14 @@ of <code>obs</code>); and <code>unc</code> is the uncertainty of
 observed <span class="math inline">\(\sigma_{Hmax}\)</span> (either
 numeric vector of length of <code>obs</code> or a number).</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;nuvel1&quot;</span>) <span class="co"># import example data set for Euler rotations</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>por <span class="ot">&lt;-</span></span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="fu">subset</span>(nuvel1, nuvel1<span class="sc">$</span>plate.rot <span class="sc">==</span> <span class="st">&quot;na&quot;</span>) <span class="co"># North America relative to Pacific plate</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>point <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lat =</span> <span class="dv">45</span>, <span class="at">lon =</span> <span class="dv">20</span>)</span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>prd <span class="ot">&lt;-</span> <span class="fu">model_shmax</span>(point, por)</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="fu">norm_chisq</span>(<span class="at">obs =</span> <span class="dv">90</span>, prd<span class="sc">$</span>sc, <span class="at">unc =</span> <span class="dv">10</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; [1] 0.2790849</span></span></code></pre></div>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>por <span class="ot">&lt;-</span> <span class="fu">subset</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  nuvel1, nuvel1<span class="sc">$</span>plate.rot <span class="sc">==</span> <span class="st">&quot;na&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>) <span class="co"># North America relative to Pacific plate</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>point <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">lat =</span> <span class="dv">45</span>, <span class="at">lon =</span> <span class="dv">20</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>prd <span class="ot">&lt;-</span> <span class="fu">model_shmax</span>(point, por)</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="fu">norm_chisq</span>(<span class="at">obs =</span> <span class="dv">90</span>, prd<span class="sc">$</span>sc, <span class="at">unc =</span> <span class="dv">10</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.2790849</span></span></code></pre></div>
 </div>
 <div id="models-of-current-plate-motion" class="section level1">
 <h1>Models of current plate motion</h1>
