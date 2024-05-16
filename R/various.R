@@ -3,27 +3,26 @@
 #' Assigns numeric values of the precision of each measurement to the
 #' categorical quality ranking of the World Stress Map (A, B, C, D).
 #'
-#' @param regime Either a string or a character vector of WSM quality ranking
+#' @param x Either a string or a character vector of WSM quality ranking
 #'
 #' @returns \code{"integer"} or vector of type \code{"integer"}
 #'
-#' @references Heidbach, O., Barth, A., Müller, B., Reinecker, J.,
+#' @references Heidbach, O., Barth, A., M<U+00FC>ller, B., Reinecker, J.,
 #' Stephansson, O., Tingay, M., Zang, A. (2016). WSM quality
 #' ranking scheme, database description and analysis guidelines for stress
 #' indicator. *World Stress Map Technical Report* **16-01**, GFZ German Research
 #' Centre for Geosciences. \doi{10.2312/wsm.2016.001}
 #'
-#' @export
-#'
+#' @name parse_wsm
 #' @examples
-#' quantise_wsm_quality(c("A", "B", "C", "D", NA))
+#' parse_wsm_quality(c("A", "B", "C", "D", NA))
 #' data("san_andreas")
-#' quantise_wsm_quality(san_andreas$quality)
-quantise_wsm_quality <- function(regime) {
-  as.numeric(sapply(X = regime, FUN = regime2unc))
-}
+#' parse_wsm_quality(san_andreas$quality)
+NULL
 
-regime2unc <- function(x) {
+#' @rdname parse_wsm
+#' @export
+parse_wsm_quality <- function(x) {
   c(
     "A" = 15,
     "B" = 20,
@@ -32,6 +31,12 @@ regime2unc <- function(x) {
   )[x]
 }
 
+#' @rdname parse_wsm
+#' @export
+quantise_wsm_quality <- function(x) {
+  .Deprecated(parse_wsm_quality)
+  as.numeric(sapply(X = x, FUN = parse_wsm_quality))
+}
 
 
 #' Quick analysis of a stress data set
@@ -98,7 +103,7 @@ stress_analysis <- function(x, PoR, type = c("none", "in", "out", "right", "left
   disp <- circular_dispersion(res$azi.PoR, prd, 1 / x$unc)
   conf <- confidence_angle(res$azi.PoR, w = 1 / x$unc)
   nchisq <- norm_chisq(res$azi.PoR, prd, unc = x$unc)
-  rayleigh <- weighted_rayleigh(res$azi.PoR, prd, unc = x$unc)
+  rayleigh <- weighted_rayleigh(res$azi.PoR, prd, w = 1 / x$unc)
 
   if (plot) {
     PoR_map(x, PoR, pb, type = type, deviation = TRUE)
@@ -132,12 +137,14 @@ stress_analysis <- function(x, PoR, type = c("none", "in", "out", "right", "left
 #'
 #' @name line_azimuth
 #' @examples
-#' data("plates", package = "tectonicr")
+#' data("plates")
 #' subset(plates, pair == "af-eu") |>
 #'   smoothr::densify() |>
 #'   line_azimuth()
 #'
-#' line_azimuth(plates)
+#' \dontrun{
+#' lines_azimuths(plates)
+#' }
 NULL
 
 #' @rdname line_azimuth
@@ -150,7 +157,6 @@ line_azimuth <- function(x) {
     sf::st_coordinates()
 
   n <- nrow(mat)
-
   a <- numeric()
   for (i in 1:(n - 1)) {
     a[i] <- get_azimuth(mat[i, 2], mat[i, 1], mat[i + 1, 2], mat[i + 1, 1])

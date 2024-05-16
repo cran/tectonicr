@@ -1,7 +1,7 @@
 # Tests ####
 nchisq_eq <- function(obs, prd, unc) {
   if (is.na(unc) || unc == 0) unc <- 1 # uncertainty cannot be 0
-  w <- deviation_norm(obs - prd)
+  w <- deviation_norm(obs, prd)
   x <- (w / unc)^2
   y <- (90 / unc)^2
   return(c(x, y))
@@ -86,27 +86,31 @@ norm_chisq <- function(obs, prd, unc) {
 
 #' Rayleigh Test of Circular Uniformity
 #'
-#' Performs a Rayleigh test of uniformity (or randomness), assessing the
-#' significance of the mean resultant length.
-#' The alternative hypothesis is an unimodal distribution with unknown mean
-#' direction and unknown mean resultant length if `mu` is `NULL`.
-#' If `mu` is specified the alternative hypothesis is a unimodal distribution with a
-#' specified mean direction and unknown mean resultant length.
+#' Performs a Rayleigh test for uniformity of circular/directional data by
+#' assessing the significance of the mean resultant length.
 #'
 #' @param x numeric vector. Values in degrees
 #' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
-#' @param mu (optional) The specified or known mean direction (in degrees) in alternative hypothesis
-#' @details
+#' @param mu (optional) The specified or known mean direction (in degrees) in
+#' alternative hypothesis
+#'
+#' @details \describe{
+#' \item{\eqn{H_0}{H0}:}{angles are randomly distributed around the circle.}
+#' \item{\eqn{H_1}{H1}:}{angles are from unimodal distribution with unknown mean
+#' direction and mean resultant length (when `mu` is `NULL`. Alternatively (when
+#' `mu` is specified),
+#' angles are uniformly distributed around a specified direction.}
+#' }
 #' If `statistic > p.value`, the null hypothesis is rejected,
-#' i.e. the length of the mean resultant differs significantly from zero.
-#' If not, randomness (uniform distribution) cannot be excluded.
+#' i.e. the length of the mean resultant differs significantly from zero, and
+#' the angles are not randomly distributed.
 #'
 #' @note Although the Rayleigh test is consistent against (non-uniform)
-#' von Mises alternatives, it is not consistent against alternatives with `p = 0`
-#' (in particular, distributions with antipodal symmetry, i.e. axial data).
-#' Tests of non-uniformity which are consistent against all alternatives
-#' include Kuiper’s test ([kuiper_test()]) and Watson’s \eqn{U^2} test
+#' von Mises alternatives, it is not consistent against alternatives with
+#' `p = 0` (in particular, distributions with antipodal symmetry, i.e. axial
+#' data). Tests of non-uniformity which are consistent against all alternatives
+#' include Kuiper's test ([kuiper_test()]) and Watson's \eqn{U^2} test
 #' ([watson_test()]).
 #'
 #' @returns a list with the components:
@@ -119,11 +123,14 @@ norm_chisq <- function(obs, prd, unc) {
 #' @references
 #' Mardia and Jupp (2000). Directional Statistics. John Wiley and Sons.
 #'
-#' Wilkie (1983): Rayleigh Test for Randomness of Circular Data. Appl. Statist. 32, No. 3, pp. 311-312
+#' Wilkie (1983): Rayleigh Test for Randomness of Circular Data. Appl.
+#' Statist. 32, No. 3, pp. 311-312
 #'
-#' Jammalamadaka, S. Rao and Sengupta, A. (2001). Topics in Circular Statistics, Sections 3.3.3 and 3.4.1, World Scientific Press, Singapore.
+#' Jammalamadaka, S. Rao and Sengupta, A. (2001). Topics in Circular Statistics,
+#' Sections 3.3.3 and 3.4.1, World Scientific Press, Singapore.
 #'
-#' @seealso [mean_resultant_length()], [circular_mean()], [norm_chisq()], [kuiper_test()], [watson_test()]
+#' @seealso [mean_resultant_length()], [circular_mean()], [norm_chisq()],
+#' [kuiper_test()], [watson_test()]
 #'
 #' @export
 #'
@@ -157,12 +164,11 @@ norm_chisq <- function(obs, prd, unc) {
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' rayleigh_test(sa.por$azi.PoR, mu = 135)
 rayleigh_test <- function(x, mu = NULL, axial = TRUE) {
-  if (axial) {
-    f <- 2
+  f <- if (axial) {
+    2
   } else {
-    f <- 1
+    1
   }
-
 
   if (is.null(mu)) {
     x <- (na.omit(x) * f) %% 360
@@ -251,9 +257,9 @@ rayleigh_p_value2 <- function(K, n) {
 #' Weighted version of the Rayleigh test (or V0-test) for uniformity against a
 #' distribution with a priori expected von Mises concentration.
 #' @param x numeric vector. Values in degrees
-#' @param unc numeric. The standard deviations of `x`. If `NULL`, the non-weighted
-#' Rayleigh test is performed.
-#' @param prd The a priori expected direction (in degrees) for the alternative
+#' @param w numeric vector weights of length `length(x)`. If `NULL`, the
+#' non-weighted Rayleigh test is performed.
+#' @param mu The *a priori* expected direction (in degrees) for the alternative
 #' hypothesis.
 #' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
@@ -288,45 +294,40 @@ rayleigh_p_value2 <- function(K, n) {
 #' tibet.por <- PoR_shmax(tibet, PoR.tib, "in")
 #'
 #' # GOF test:
-#' weighted_rayleigh(tibet.por$azi.PoR, prd = 90, unc = tibet$unc)
-#' weighted_rayleigh(ice.por$azi.PoR, prd = 0, unc = iceland$unc)
-#' weighted_rayleigh(sa.por$azi.PoR, prd = 135, unc = san_andreas$unc)
-weighted_rayleigh <- function(x, prd = NULL, unc, axial = TRUE) {
-  if (is.null(unc)) {
-    rayleigh_test(x, mu = prd, axial = axial)
+#' weighted_rayleigh(tibet.por$azi.PoR, mu = 90, w = 1 / tibet$unc)
+#' weighted_rayleigh(ice.por$azi.PoR, mu = 0, w = 1 / iceland$unc)
+#' weighted_rayleigh(sa.por$azi.PoR, mu = 135, w = 1 / san_andreas$unc)
+weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE) {
+  if (is.null(w)) {
+    rayleigh_test(x, mu = mu, axial = axial)
   } else {
-    data <- cbind(x = x, unc = unc)
+    data <- cbind(x = x, w = w)
     data <- data[stats::complete.cases(data), ] # remove NA values
 
 
-    unc <- data[, "unc"]
-    w <- 1 / unc
+    w <- data[, "w"]
     Z <- sum(w)
-    n <- length(unc)
+    n <- length(w)
 
-    if (is.null(prd)) {
-      prd <- circular_mean(x, w, axial, na.rm = FALSE)
+    if (is.null(mu)) {
+      mu <- circular_mean(x, w, axial, na.rm = FALSE)
     }
 
-    d <- data[, "x"] - prd
-
-    f <- 1
-    if (axial) {
-      f <- 2
-    }
-    cosd <- cosd(f * d)
-    wcosd <- w * cosd
+    d <- data[, "x"] - mu
+    f <- ifelse(axial, 2, 1)
+    cosd <- cosd(f * d) / f
+    #wcosd <- w * cosd
 
     md <- 1
     # if(norm){
     #   md <- 2
     # }
-    wmd <- md * w # = w * (1 - cos(pi)) = w* (1 - (-1))
+    #wmd <- md * w # = w * (1 - cos(pi)) = w * (1 - (-1))
 
-    C <- (sum(wcosd) / sum(wmd))
+    C <- sum(w * cosd) / (Z * md)
 
-    s <- sqrt(2 * Z) * C
-    p.value <- rayleigh_p_value2(s, Z)
+    s <- sqrt(2 * Z * md) * C
+    p.value <- rayleigh_p_value2(s, Z*md)
 
     result <- list(
       statistic = C,
@@ -344,7 +345,9 @@ weighted_rayleigh <- function(x, prd = NULL, unc, axial = TRUE) {
 
 #' Kuiper Test of Circular Uniformity
 #'
-#' Kuiper test for circular random distribution.
+#' Kuiper's test statistic is a rotation-invariant Kolmogorov-type test statistic.
+#' The critical values of a modified Kuiper's test statistic are used according
+#' to the tabulation given in Stephens (1970).
 #'
 #' @param x numeric vector containing the circular data which are expressed in degrees
 #' @param alpha Significance level of the test. Valid levels are `0.01`, `0.05`, and `0.1`.
@@ -355,9 +358,6 @@ weighted_rayleigh <- function(x, prd = NULL, unc, axial = TRUE) {
 #' level `p.value`.
 #'
 #' @details
-#' Kuiper's test statistic is a rotation-invariant Kolmogorov-type test statistic.
-#' The critical values of a modified Kuiper's test statistic are used according
-#' to the tabulation given in Stephens (1970).
 #'
 #' If `statistic > p.value`, the null hypothesis is rejected.
 #' If not, randomness (uniform distribution) cannot be excluded.
@@ -383,11 +383,8 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
     c(0.15, 0.1, 0.05, 0.025, 0.01),
     c(1.537, 1.62, 1.747, 1.862, 2.001)
   )
-  if (axial) {
-    f <- 2
-  } else {
-    f <- 1
-  }
+  f <- ifelse(axial, 2, 1)
+
   x <- (na.omit(x) * f) %% 360
   u <- sort(deg2rad(x) %% (2 * pi)) / (2 * pi)
   n <- length(x)
@@ -431,14 +428,17 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
 
 #' Watson's \eqn{U^2} Test of Circular Uniformity
 #'
-#' Watson's test for circular random distribution.
+#' Watson's test statistic is a rotation-invariant Cramer - von Mises test
 #'
 #' @param x numeric vector. Values in degrees
-#' @param alpha Significance level of the test. Valid levels are `0.01`, `0.05`, and `0.1`.
-#' This argument may be omitted (`NULL`, the default), in which case, a range for the p-value will be returned.
+#' @param alpha Significance level of the test. Valid levels are `0.01`, `0.05`,
+#' and `0.1`.
+#' This argument may be omitted (`NULL`, the default), in which case, a range
+#' for the p-value will be returned.
 #' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
 #' (`TRUE`, the default) or circular, i.e. \eqn{2 \pi}-periodical (`FALSE`).
-#' @param mu (optional) The specified or known mean direction (in degrees) in alternative hypothesis
+#' @param mu (optional) The specified mean direction (in degrees) in alternative
+#'  hypothesis
 #' @param dist Distribution to test for. The default, `"uniform"`, is the
 #' uniform distribution. `"vonmises"` tests the von Mises distribution.
 #'
@@ -446,11 +446,11 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
 #' level `p.value`.
 #'
 #' @details
-#' Watson's test statistic is a rotation-invariant Cramer - von Mises test statistic.
 #' If `statistic > p.value`, the null hypothesis is rejected.
 #' If not, randomness (uniform distribution) cannot be excluded.
 #'
-#' @references Mardia and Jupp (2000). Directional Statistics. John Wiley and Sons.
+#' @references Mardia and Jupp (2000). Directional Statistics. John Wiley and
+#' Sons.
 #'
 #' @export
 #'
@@ -715,7 +715,7 @@ A1inv <- function(x) {
 #' @param bias logical parameter determining whether a bias correction is used
 #' in the computation of the MLE. Default for bias is `FALSE` for no bias
 #' correction.
-#' @param ... optional paramters passed to `circular_mean()`
+#' @param ... optional parameters passed to `circular_mean()`
 #'
 #' @returns numeric.
 #' @export
@@ -723,10 +723,10 @@ A1inv <- function(x) {
 #' @examples
 #' est.kappa(rvm(100, 90, 10), w = 1 / runif(100, 0, 10))
 est.kappa <- function(x, w = NULL, bias = FALSE, ...) {
-  if (is.null(w)) {
-    w <- rep(1, times = length(x))
+  w <- if (is.null(w)) {
+    rep(1, times = length(x))
   } else {
-    w <- as.numeric(w)
+    as.numeric(w)
   }
 
   data <- cbind(x = x, w = w)

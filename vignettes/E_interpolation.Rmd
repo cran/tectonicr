@@ -1,5 +1,7 @@
 ---
 title: "5. Spatial interpolation"
+author: "Tobias Stephan"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{5. Spatial interpolation}
@@ -20,12 +22,12 @@ knitr::opts_chunk$set(
 This vignette teaches you how to spatially interpolate stress fields and 
 display the lateral patterns of stress anomalies.
 
-```{r setup, echo=TRUE}
+```{r setup}
 library(tectonicr)
 library(ggplot2) # load ggplot library
 ```
 
-```{r load_data, echo=TRUE}
+```{r load_data}
 data("san_andreas")
 
 data("cpm_models")
@@ -41,21 +43,27 @@ Spatial interpolation of stress data is based on the aforementioned metrics (the
 algorithm is a modified version of the MATLAB script 'stress2grid' by Ziegler 
 and Heidbach (2017).
 
-```{r interpolation, echo=TRUE}
+```{r interpolation}
 mean_SH <- stress2grid(san_andreas, gridsize = 1, R_range = seq(50, 350, 100))
 ```
 
 The default settings apply quality and inverse distance weighting of the mean, 
 as well as a 25% cut-off for the standard deviation. 
 
+> The tectonicr algorithm provides additional modifications of the original 
+algorithm by Ziegler and Heidbach (2017). See `help(stress2grid)` for more 
+details and settings, such as different statistics for calculating the 
+orientation average, adjustments of the weighting power of the distance, 
+quality or method.
+
 The data can now be visualized:  
-```{r plot, echo=TRUE, warning=FALSE, message=FALSE, eval=FALSE}
+```{r plot, warning=FALSE, message=FALSE}
 trajectories <- eulerpole_loxodromes(x = por, n = 40, cw = FALSE)
+
 ggplot(mean_SH) +
-  borders(fill = "grey80") +
   geom_sf(data = trajectories, lty = 2) +
   geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .5, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - azi), alpha = sd, color = mdr), radius = 1, position = "center_spoke", size = 1) +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - azi), alpha = sd, color = mdr), radius = 1, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "Standard deviation", range = c(1, .25)) +
   scale_color_viridis_c(
@@ -65,7 +73,6 @@ ggplot(mean_SH) +
   ) +
   facet_wrap(~R)
 ```
-![](interpolation.png)
 
 ### PoR coordinate system
 
@@ -76,16 +83,15 @@ constant no matter the distance between the data points. Assuming that the
 stress field is sourced by the plate boundary force, the model-based 
 interpolation allows more reliable results for areas close to plate boundaries.
 
-```{r interpolation_PoR, eval=TRUE}
+```{r interpolation_PoR}
 mean_SH_PoR <- PoR_stress2grid(san_andreas, PoR = por, gridsize = 1, R_range = seq(50, 350, 100))
 ```
 
-```{r plot2, echo=TRUE, warning=FALSE, message=FALSE, eval=FALSE}
+```{r plot2, warning=FALSE, message=FALSE}
 ggplot(mean_SH_PoR) +
-  borders(fill = "grey80") +
   geom_sf(data = trajectories, lty = 2) +
   geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .5, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - azi), alpha = sd, color = mdr), radius = 1, position = "center_spoke", size = 1) +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - azi), alpha = sd, color = mdr), radius = 1, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "Standard deviation", range = c(1, .25)) +
   scale_color_viridis_c(
@@ -95,7 +101,6 @@ ggplot(mean_SH_PoR) +
   ) +
   facet_wrap(~R)
 ```
-![](interpolation_PoR.png)
 
 ## Rasterize the interpolation
 
@@ -105,7 +110,7 @@ was performed in the PoR CRS, the interpolated azimuths are additionally given
 in the transformed azimuths. This allows to easily calculate misfits from 
 predicted directions:
 
-```{r compact, echo = TRUE}
+```{r compact}
 mean_SH_PoR_reduced <- mean_SH_PoR |>
   compact_grid() |>
   dplyr::mutate(cdist = circular_distance(azi.PoR, 135))
@@ -118,25 +123,59 @@ the grid is not composed of equally spaced grid cells in the geographic CRS. To
 rasterize such grids, we can, e.g., use Voronoi cells from the `ggforce` 
 package.
 
-```{r voronoi, echo=TRUE, warning=FALSE, message=FALSE, eval=FALSE}
+```{r voronoi, warning=FALSE, message=FALSE}
 ggplot(mean_SH_PoR_reduced) +
   ggforce::geom_voronoi_tile(
     aes(lon, lat, fill = cdist),
     max.radius = .7, normalize = FALSE
   ) +
   scale_fill_viridis_c("Angular distance", limits = c(0, 1)) +
-  borders(colour = "grey80", fill = NA) +
   geom_sf(data = trajectories, lty = 2) +
   geom_spoke(
     aes(lon, lat, angle = deg2rad(90 - azi), alpha = sd),
-    radius = .5, position = "center_spoke", size = .2, colour = "white"
+    radius = .5, position = "center_spoke", lwd = .2, colour = "white"
   ) +
   scale_alpha("Standard deviation", range = c(1, .25)) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat))
 ```
-![](interpolation_voronoi.png)
-The map highlights **stress anomalies**, i.e. misfits to the direction of tested 
-plate boundary force.
+
+The map highlights **stress anomalies** which show misfits to the direction of 
+tested plate boundary force.
+
+## Kernel dispersion
+
+Another way to analyse spatial misfits is the kernel dispersion, i.e. the
+local dispersion within a user-defined window (kernel). The kernel´s half width 
+can be a single number (km) or a range of widths. The latter requires to compact
+the grid result (`x`) to find the smallest kernel size containing the the least 
+dispersion (`compact_grid(x, 'dispersion')`).
+
+> It is recommended to calculate the kernel dispersion on PoR transformed data to 
+avoid angle distortions due to projections.
+
+```{r kernel_disp}
+san_andreas_por <- san_andreas
+san_andreas_por$azi <- PoR_shmax(san_andreas, por, "right")$azi.PoR # transform to PoR azimuth
+san_andreas_por$prd <- 135 # test direction
+san_andreas_kdisp <- kernel_dispersion(san_andreas_por, gridsize = 1, R_range = seq(50, 350, 100))
+san_andreas_kdisp <- compact_grid(san_andreas_kdisp, "dispersion")
+
+ggplot(san_andreas_kdisp) +
+  ggforce::geom_voronoi_tile(
+    aes(lon, lat, fill = stat),
+    max.radius = .7, normalize = FALSE
+  ) +
+  scale_fill_viridis_c("Dispersion", limits = c(0, 1)) +
+  geom_sf(data = trajectories, lty = 2) +
+  geom_spoke(
+    data = san_andreas,
+    aes(lon, lat, angle = deg2rad(90 - azi), alpha = unc),
+    radius = .5, position = "center_spoke", lwd = .2, colour = "white"
+  ) +
+  scale_alpha("Standard deviation", range = c(1, .25)) +
+  coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat))
+```
+
 
 # References
 Mardia, K. V., and Jupp, P. E. (Eds.). (1999). "Directional Statistics" 

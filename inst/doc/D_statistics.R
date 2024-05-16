@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -54,5 +54,5 @@ circular_dispersion(san_andreas.por$azi.PoR, y = 135, w = 1 / san_andreas$unc)
 circular_dispersion_boot(san_andreas.por$azi.PoR, y = 135, w = 1 / san_andreas$unc, R = 1000)
 
 ## ----rayleigh2, echo=TRUE-----------------------------------------------------
-weighted_rayleigh(san_andreas.por$azi.PoR, prd = 135, unc = san_andreas$unc)
+weighted_rayleigh(san_andreas.por$azi.PoR, mu = 135, w = 1 / san_andreas$unc)
 

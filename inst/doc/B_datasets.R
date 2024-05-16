@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -31,7 +31,6 @@ trajectories <- eulerpole_loxodromes(por, 40, cw = FALSE)
 
 ## ----plot1, echo=TRUE, warning=FALSE, message=FALSE---------------------------
 map <- ggplot() +
-  # borders(fill = "grey80") +
   geom_sf(
     data = plates,
     color = "red",

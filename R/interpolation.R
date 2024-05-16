@@ -5,22 +5,18 @@
 #' @returns numeric value
 #'
 #' @export
-earth_radius <- function() {
-  6371.0087714
-}
+earth_radius <- function() 6371.0087714
 
 wcmean <- function(x, w) {
   Z <- sum(w, na.rm = TRUE)
   if (Z != 0) {
     m <- mean_SC(2 * x, w = w, na.rm = TRUE)
     meanR <- sqrt(m[, "C"]^2 + m[, "S"]^2)
-
-    if (meanR > 1) {
-      sd_s <- 0
+    sd_s <- if (meanR > 1) {
+      0
     } else {
-      sd_s <- sqrt(-2 * log(meanR)) / 2
+      sqrt(-2 * log(meanR)) / 2
     }
-
     mean_s <- atan2(m[, "S"], m[, "C"]) / 2
     rad2deg(c(mean_s, sd_s)) %% 180
   } else {
@@ -29,64 +25,63 @@ wcmean <- function(x, w) {
 }
 
 wcmedian <- function(x, w) {
-  if (length(x) > 3) {
+  Z <- sum(w, na.rm = TRUE)
+  if (Z > 3) {
     quantiles <- circular_quantiles(x, w)
-    median_s <- quantiles[3]
-    iqr_s <- deviation_norm(as.numeric(quantiles[4] - quantiles[2]))
-  } else {
+    median_s <- (quantiles[3])
+    iqr_s <- deviation_norm(quantiles[4], quantiles[2])
+  } else if (Z > 0 & Z <= 3) {
     median_s <- circular_median(x, w)
-    iqr_s <- ceiling(
-      abs(
-        deviation_norm(max(x)) - deviation_norm(min(x))
-      ) / 2
-    )
+    iqr_s <- ceiling(deviation_norm(max(x), min(x)) / 2)
+  } else {
+    median_s <- iqr_s <- NA
   }
   c(median_s, iqr_s)
 }
 
 #' Spatial interpolation of SHmax
 #'
-#' Stress field and wavelength analysis using (weighted) mean/median and
-#' standard deviation/IQR of stress data
+#' Stress field interpolation and wavelength analysis using a kernel (weighted)
+#' mean/median and standard deviation/IQR of stress data
 #'
 #' @param x \code{sf} object containing
 #' \describe{
 #' \item{azi}{SHmax in degree}
-#' \item{unc}{Uncertainties of SHmax in degree}
-#' \item{type}{Methods used for the determination of the direction of SHmax}
+#' \item{unc}{(optional) Uncertainties of SHmax in degree}
+#' \item{type}{(optional) Methods used for the determination of the direction
+#' of SHmax}
 #' }
 #' @param grid (optional) Point object of class \code{sf}.
-#' @param lon_range,lat_range (optional) numeric vector specifying the minimum
-#' and maximum longitudes and latitudes (are ignored if `"grid"` is specified).
+#' @param lon_range,lat_range (optional) Numeric vector specifying the minimum
+#' and maximum longitudes and latitudes (ignored if `grid` is specified).
 #' @param gridsize Numeric. Target spacing of the regular grid in decimal
-#' degree. Default is 2.5. (is ignored if `"grid"` is specified)
-#' @param stat Should the direction of interpolated SHmax be based  on the
-#' circular mean and standard deviation (\code{"mean"}, the default) or on the
-#' circular median
-#' and interquartile range (\code{"median"})?
-#' @param min_data Integer. Minimum number of data per bin. Default is 3
+#' degree. Default is `2.5`. (is ignored if `grid` is specified)
+#' @param stat Whether the direction of interpolated SHmax is based on the
+#' circular mean and standard deviation (\code{"mean"}, the default) or the
+#' circular median and interquartile range (\code{"median"})
+#' @param min_data Integer. Minimum number of data per bin. Default is `3`
 #' @param threshold Numeric. Threshold for deviation of direction. Default is
 #' 25
-#' @param arte_thres Numeric. Maximum distance (in km) of the gridpoint to the
-#' next
-#' datapoint. Default is 200
-#' @param method_weighting Logical. If a method weighting should be applied:
-#' Default is \code{FALSE}.
-#' @param quality_weighting Logical. If a quality weighting should be applied:
-#' Default is
-#' \code{TRUE}.
+#' @param arte_thres Numeric. Maximum distance (in km) of the grid point to the
+#' next data point. Default is `200`
 #' @param dist_weight Distance weighting method which should be used. One of
 #' `"none"`, `"linear"`, or `"inverse"` (the default).
+#' @param idp,qp,mp Numeric. The weighting power of inverse distance, quality
+#' and method. Default is `1`. The higher the value, the more weight it will
+#' put. When set to `0`, no weighting is applied. `idp` is only effective if
+#' inverse distance weighting (`dist_weight="inverse"`) is applied.
 #' @param dist_threshold Numeric. Distance weight to prevent overweight of data
-#' nearby
-#' (0 to 1). Default is 0.1
-#' @param R_range Numeric value or vector specifying the search radius (in km).
-#' Default is \code{seq(50, 1000, 50)}
+#' nearby (0 to 1). Default is `0.1`
+#' @param method_weighting Logical. If a method weighting should be applied:
+#' Default is \code{FALSE}. If `FALSE`, overwrites `mp`.
+#' @param quality_weighting Logical. If a quality weighting should be applied:
+#' Default is \code{TRUE}. If `FALSE`, overwrites `qp`.
+#' @param R_range Numeric value or vector specifying the kernel half-width(s),
+#' i.e. the search radius (in km). Default is \code{seq(50, 1000, 50)}
 #' @param ... optional arguments to [dist_greatcircle()]
 #'
 #' @importFrom sf st_coordinates st_bbox st_make_grid st_crs st_as_sf
-#' @importFrom dplyr group_by mutate
-#' @importFrom tidyr drop_na
+#' @importFrom dplyr group_by mutate filter rename mutate as_tibble
 #'
 #' @returns
 #' \code{sf} object containing
@@ -99,7 +94,7 @@ wcmedian <- function(x, w) {
 #' \item{N}{Number of data points in search radius}
 #' }
 #'
-#' @details Updated version of the MATLAB script "stress2grid"
+#' @details This is a modified version of the MATLAB script "stress2grid"
 #'
 #' @seealso [dist_greatcircle()], [PoR_stress2grid()], [compact_grid()],
 #' [circular_mean()], [circular_median()], [circular_sd()]
@@ -113,7 +108,7 @@ wcmedian <- function(x, w) {
 #'
 #' @examples
 #' data("san_andreas")
-#' stress2grid(san_andreas)
+#' stress2grid(san_andreas, stat = "median")
 stress2grid <- function(x,
                         stat = c("mean", "median"),
                         grid = NULL,
@@ -126,66 +121,74 @@ stress2grid <- function(x,
                         method_weighting = FALSE,
                         quality_weighting = TRUE,
                         dist_weight = c("inverse", "linear", "none"),
+                        idp = 1.0,
+                        qp = 1.0,
+                        mp = 1.0,
                         dist_threshold = 0.1,
                         R_range = seq(50, 1000, 50),
                         ...) {
   stopifnot(
     inherits(x, "sf"), is.numeric(gridsize), is.numeric(threshold), is.numeric(arte_thres),
     arte_thres > 0, is.numeric(dist_threshold), is.numeric(R_range), is.logical(method_weighting),
-    is.logical(quality_weighting)
+    is.logical(quality_weighting), is.numeric(idp), is.numeric(qp), is.numeric(mp)
   )
 
   min_data <- as.integer(ceiling(min_data))
-
   dist_weight <- match.arg(dist_weight)
   stat <- match.arg(stat)
 
-  unc <- lat <- lon <- lat.X <- lat.Y <- lon.Y <- lon.X <- R <- N <- numeric()
-  type <- character()
-
-  azi <- x$azi
   colnames_x <- colnames(x)
 
+  if (quality_weighting & "unc" %in% colnames_x) {
+    x <- filter(x, !is.na(unc))
+  }
+
+  # pre-allocating
+  azi <- x$azi
+  length_azi <- length(azi)
+  unc <- lat <- lon <- numeric(length_azi)
+  type <- character(9)
   num_r <- length(R_range)
 
+
+  if (!quality_weighting) qp <- 0
+  if (!method_weighting) mp <- 0
+  if (dist_weight == "none") idp <- 0
+
   # WSM method weighting (from 0 to 5)
-  if (method_weighting && "type" %in% colnames_x) {
-    method_weights <- data.frame(
-      type = c("FMS", "FMF", "BO", "DIF", "HF", "GF", "GV", "OC", NA),
-      w_method = c(4, 5, 5, 5, 4, 5, 4, 2, 1) / 5
+  if ("type" %in% colnames_x) {
+    parse_method <- setNames(
+      c(4, 5, 5, 5, 4, 5, 4, 2, 1) / 5,
+      c("FMS", "FMF", "BO", "DIF", "HF", "GF", "GV", "OC", NA)
     )
-    x <- dplyr::left_join(x, method_weights)
+    w_method <- parse_method[x$type]
   } else {
-    w_method <- rep(1, length(azi))
+    w_method <- rep(1, length_azi)
   }
 
-  if (quality_weighting && "unc" %in% colnames_x) {
-    w_quality <- 1 / x$unc
+  w_quality <- if ("unc" %in% colnames_x) {
+    1 / x$unc
   } else {
-    w_quality <- rep(1, length(azi))
+    rep(1, length_azi)
   }
 
-  x_coords <- # sf::st_transform(x, crs = "WGS84") |>
-    sf::st_coordinates(x) |>
+  x_coords <- sf::st_coordinates(x) |>
     as.data.frame()
 
   datas <- data.frame(
     lon = x_coords$X,
     lat = x_coords$Y,
     azi = azi,
-    w_method = ifelse(is.na(w_method), 1 / 5, w_method),
-    w_quality = w_quality
-  )
-
-  if (quality_weighting) {
-    datas <- tidyr::drop_na(datas, w_quality)
-  }
+    w_method = ifelse(is.na(w_method), 1 / 5, w_method)^mp,
+    w_quality = w_quality^qp
+  ) |>
+    as.matrix()
 
   if (is.null(grid)) {
     # Regular grid
     if (is.null(lon_range) || is.null(lat_range)) {
-      lon_range <- range(datas$lon, na.rm = TRUE)
-      lat_range <- range(datas$lat, na.rm = TRUE)
+      lon_range <- range(datas[, 1], na.rm = TRUE)
+      lat_range <- range(datas[, 2], na.rm = TRUE)
     }
 
     grid <- sf::st_bbox(
@@ -205,12 +208,13 @@ stress2grid <- function(x,
       sf::st_as_sf()
   }
   stopifnot(inherits(grid, "sf"), any(sf::st_is(grid, "POINT")))
-  G <- grid |>
-    sf::st_coordinates()
+  G <- sf::st_coordinates(grid)
+
+  R <- N <- numeric(nrow(G))
 
   SH <- c()
   for (i in seq_along(G[, 1])) {
-    distij <- dist_greatcircle(G[i, 2], G[i, 1], datas$lat, datas$lon, ...)
+    distij <- dist_greatcircle(G[i, 2], G[i, 1], datas[, 2], datas[, 1], ...)
 
     if (min(distij) <= arte_thres) {
       for (k in seq_along(R_range)) {
@@ -226,28 +230,24 @@ stress2grid <- function(x,
           meanSH <- mdr <- NA
         } else if (N_in_R == 1) {
           sd <- 0
-          meanSH <- datas$azi[ids_R]
+          meanSH <- datas[ids_R, 3]
           mdr <- distij[ids_R] / R_search
         } else {
           mdr <- mean(distij[ids_R], na.rm = TRUE) / R_search
-
           dist_threshold_scal <- R_search * dist_threshold
 
-          if (dist_weight == "inverse") {
-            w_distance <- 1 / max(dist_threshold_scal, distij[ids_R])
-          } else if (dist_weight == "linear") {
+          if (dist_weight == "linear") {
             w_distance <- R_search + 1 - max(dist_threshold_scal, distij[ids_R])
           } else {
-            w_distance <- rep(1, length(ids_R))
+            w_distance <- 1 / (max(dist_threshold_scal, distij[ids_R]))^idp
           }
-
-          w <- w_distance * datas$w_quality[ids_R] * datas$w_method[ids_R]
+          w <- w_distance * datas[ids_R, 5] * datas[ids_R, 4]
 
           # mean value
           if (stat == "median") {
-            stats <- wcmedian(datas$azi[ids_R], w)
+            stats <- wcmedian(datas[ids_R, 3], w)
           } else {
-            stats <- wcmean(datas$azi[ids_R], w)
+            stats <- wcmean(datas[ids_R, 3], w)
           }
           meanSH <- as.numeric(stats[1])
           sd <- as.numeric(stats[2])
@@ -262,13 +262,14 @@ stress2grid <- function(x,
           N = N_in_R
         )
 
-        if (SH.ik[4] <= threshold) {
+        if (SH.ik[4] <= threshold & !is.na(SH.ik[4])) {
           SH <- rbind(SH, SH.ik)
         }
       }
     }
   }
 
+  lat.Y <- lon.X <- numeric(nrow(SH)) # pre allocating
   res <- dplyr::as_tibble(SH) |>
     dplyr::rename(lon = lon.X, lat = lat.Y) |>
     dplyr::mutate(N = as.integer(N)) |>
@@ -294,12 +295,12 @@ stress2grid <- function(x,
 #' containing the geographical coordinates of the Euler  pole
 #' @param grid (optional) Point object of class \code{sf}.
 #' @param PoR_grid logical. Whether the grid should be generated based on the
-#' coordinate range in the PoR (`"TRUE`, the default) CRS or the geographical CRS
-#' (`"FALSE`). Is ignored if `"grid"` is specified.
+#' coordinate range in the PoR (`TRUE`, the default) CRS or the geographical CRS
+#' (`FALSE`). Is ignored if `grid` is specified.
 #' @param lon_range,lat_range (optional) numeric vector specifying the minimum
 #' and maximum longitudes and latitudes (are ignored if `"grid"` is specified).
 #' @param gridsize Numeric. Target spacing of the regular grid in decimal
-#' degree. Default is 2.5 (is ignored if `"grid"` is specified)
+#' degree. Default is 2.5 (is ignored if `grid` is specified)
 #' @param ... Arguments passed to [stress2grid()]
 #'
 #' @description The data is transformed into the PoR system before the
@@ -331,8 +332,6 @@ stress2grid <- function(x,
 #' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
 #' PoR_stress2grid(san_andreas, PoR)
 PoR_stress2grid <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_range = NULL, lat_range = NULL, gridsize = 2.5, ...) {
-  azi <- lat <- lon <- lat.PoR <- lon.PoR <- X <- Y <- R <- numeric()
-
   if (!is.null(grid)) {
     lon_range <- lat_range <- gridsize <- NULL
     PoR_grid <- FALSE
@@ -360,17 +359,20 @@ PoR_stress2grid <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_range = NU
     }
   }
 
-  if (!PoR_grid) {
-    grid_PoR <- sf::st_as_sf(grid) |>
-      geographical_to_PoR_sf(PoR) # |> sf::st_set_crs("WGS84")
+  grid_PoR <- if (!PoR_grid) {
+    sf::st_as_sf(grid) |>
+      geographical_to_PoR_sf(PoR)
   } else {
-    grid_PoR <- NULL
+    NULL
   }
 
-  x_PoR <- geographical_to_PoR_sf(x, PoR) # |> sf::st_set_crs("WGS84")
+  x_PoR <- geographical_to_PoR_sf(x, PoR)
   x_PoR_coords <- sf::st_coordinates(x_PoR) |>
     dplyr::as_tibble() |>
     dplyr::rename(lat = Y, lon = X)
+
+  azi <- lat <- lon <- lat.PoR <- lon.PoR <- X <- Y <- R <- numeric() # pre allocating:
+
   x_PoR$lat <- x_PoR_coords$lat
   x_PoR$lon <- x_PoR_coords$lon
   x_PoR$azi <- PoR_shmax(x, PoR)
@@ -390,17 +392,22 @@ PoR_stress2grid <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_range = NU
 
 #' Compact smoothed stress field
 #'
-#' Filter smoothed stress field to smallest wavelength (R) for each coordinate
+#' Filter smoothed stress field containing a range of search radii or kernel
+#' half widths to find smallest wavelength (R) with the least circular sd. or
+#' dispersion for each coordinate, respectively.
 #'
-#' @param x output of [stress2grid()] or [PoR_stress2grid()]
-#' @param type character. Type of the grid `x`. Either "stress2grid" of
-#' "dispersion_grid"
+#' @param x output of [stress2grid()], [PoR_stress2grid()], or [kernel_dispersion()]
+#' @param type character. Type of the grid `x`. Either `"stress"` (when input
+#' is [stress2grid()] or [PoR_stress2grid()]) or `"dispersion"` (when input
+#' is [kernel_dispersion()]).
 #'
 #' @returns \code{sf} object
 #'
-#' @importFrom dplyr ungroup mutate group_by summarise select left_join as_tibble
+#' @importFrom dplyr ungroup mutate select left_join as_tibble
 #' @importFrom tidyr drop_na
 #' @importFrom sf st_as_sf
+#' @importFrom stats aggregate
+#' @seealso [stress2grid()], [PoR_stress2grid()], [kernel_dispersion()]
 #'
 #' @export
 #'
@@ -408,35 +415,33 @@ PoR_stress2grid <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_range = NU
 #' data("san_andreas")
 #' res <- stress2grid(san_andreas)
 #' compact_grid(res)
-compact_grid <- function(x, type = c("stress2grid", "dispersion_grid")) {
+compact_grid <- function(x, type = c("stress", "dispersion")) {
   lon <- lat <- azi <- R <- stat <- numeric()
   group <- character()
   type <- match.arg(type)
 
-  if (type == "stress2grid") {
+  if (type == "stress") {
     data <- x |>
       dplyr::ungroup() |>
       dplyr::as_tibble() |>
       tidyr::drop_na(azi) |>
-      dplyr::mutate(group = paste(lon, lat)) |>
-      dplyr::group_by(group)
+      dplyr::mutate(group = paste(lon, lat))
   } else {
     data <- x |>
       dplyr::ungroup() |>
       dplyr::as_tibble() |>
       tidyr::drop_na(stat) |>
-      dplyr::mutate(group = paste(lon, lat)) |>
-      dplyr::group_by(group)
+      dplyr::mutate(group = paste(lon, lat))
   }
 
-  data |>
-    dplyr::summarise(R = min(R, na.rm = TRUE)) |>
+  aggregate(R ~ group, data, min, na.rm = TRUE) |>
     dplyr::left_join(data, by = c("group", "R")) |>
     dplyr::select(-group) |>
     sf::st_as_sf()
 }
 
-#' Spatial analysis of dispersion
+
+#' Adaptive Kernel Dispersion
 #'
 #' Stress field and wavelength analysis using circular dispersion
 #' (or other statistical estimators for dispersion)
@@ -458,13 +463,13 @@ compact_grid <- function(x, type = c("stress2grid", "dispersion_grid")) {
 #' normalized Chi-squared test statistic, or Rayleigh test statistic.
 #' @param min_data Integer. Minimum number of data per bin. Default is 3
 #' @param threshold Numeric. Threshold for stat value (default is 1)
-#' @param arte_thres Numeric. Maximum distance (in km) of the gridpoint to the
-#' next datapoint. Default is 200
+#' @param arte_thres Numeric. Maximum distance (in km) of the grid point to the
+#' next data point. Default is 200
 #' @param dist_threshold Numeric. Distance weight to prevent overweight of data
 #' nearby
 #' (0 to 1). Default is 0.1
-#' @param R_range Numeric value or vector specifying the search radius (in km).
-#' Default is \code{seq(50, 1000, 50)}
+#' @param R_range Numeric value or vector specifying the (adaptive) kernel
+#' half-width(s) as search radius (in km). Default is \code{seq(50, 1000, 50)}
 #' @param ... optional arguments to [dist_greatcircle()]
 #' @importFrom sf st_coordinates st_bbox st_make_grid st_crs st_as_sf
 #' @importFrom dplyr group_by mutate
@@ -475,7 +480,7 @@ compact_grid <- function(x, type = c("stress2grid", "dispersion_grid")) {
 #' \describe{
 #' \item{lon,lat}{longitude and latitude in degree}
 #' \item{stat}{output of function defined in `stat`}
-#' \item{R}{Search radius in km}
+#' \item{R}{The rearch radius in km.}
 #' \item{mdr}{Mean distance of datapoints per search radius}
 #' \item{N}{Number of data points in search radius}
 #' }
@@ -490,35 +495,33 @@ compact_grid <- function(x, type = c("stress2grid", "dispersion_grid")) {
 #' san_andreas_por <- san_andreas
 #' san_andreas_por$azi <- PoR_shmax(san_andreas, PoR, "right")$azi.PoR
 #' san_andreas_por$prd <- 135
-#' dispersion_grid(san_andreas_por)
-dispersion_grid <- function(x,
-                            stat = c("dispersion", "nchisq", "rayleigh"),
-                            grid = NULL,
-                            lon_range = NULL,
-                            lat_range = NULL,
-                            gridsize = 2.5,
-                            min_data = 3,
-                            threshold = 1,
-                            arte_thres = 200,
-                            dist_threshold = 0.1,
-                            R_range = seq(100, 2000, 100),
-                            ...) {
+#' kernel_dispersion(san_andreas_por)
+kernel_dispersion <- function(x,
+                              stat = c("dispersion", "nchisq", "rayleigh"),
+                              grid = NULL,
+                              lon_range = NULL,
+                              lat_range = NULL,
+                              gridsize = 2.5,
+                              min_data = 3,
+                              threshold = 1,
+                              arte_thres = 200,
+                              dist_threshold = 0.1,
+                              R_range = seq(100, 2000, 100),
+                              ...) {
   stopifnot(
     inherits(x, "sf"), is.numeric(gridsize), is.numeric(threshold), is.numeric(arte_thres),
     arte_thres > 0, is.numeric(dist_threshold), is.numeric(R_range)
   )
-
-
   stat <- match.arg(stat)
-
-
   min_data <- as.integer(ceiling(min_data))
-
   stat <- match.arg(stat)
 
-  azi <- unc <- prd <- lat <- lon <- lat.X <- lat.Y <- lon.Y <- lon.X <- R <- N <- numeric()
-
-  # colnames_x <- colnames(x)
+  # pre-allocating
+  azi <- x$azi
+  length_azi <- length(azi)
+  colnames_x <- colnames(x)
+  unc <- lat <- lon <- prd <- numeric(length_azi)
+  type <- character(9)
 
   num_r <- length(R_range)
 
@@ -561,6 +564,9 @@ dispersion_grid <- function(x,
   G <- grid |>
     sf::st_coordinates()
 
+  R <- N <- numeric(nrow(G))
+
+
   SH <- c()
   for (i in seq_along(G[, 1])) {
     distij <- dist_greatcircle(G[i, 2], G[i, 1], datas$lat, datas$lon, ...)
@@ -586,7 +592,7 @@ dispersion_grid <- function(x,
           if (stat == "nchisq") {
             y <- norm_chisq(datas$azi[ids_R], prd = datas$prd[ids_R], datas$unc[ids_R])
           } else if (stat == "rayleigh") {
-            y <- weighted_rayleigh(datas$azi[ids_R], prd = datas$prd[ids_R], unc = datas$unc[ids_R], ...)$statistic
+            y <- weighted_rayleigh(datas$azi[ids_R], mu = datas$prd[ids_R], w = 1 / datas$unc[ids_R], ...)$statistic
           } else {
             y <- circular_dispersion(datas$azi[ids_R], y = datas$prd[ids_R], w = 1 / datas$unc[ids_R], ...)
           }
@@ -608,10 +614,18 @@ dispersion_grid <- function(x,
     }
   }
 
+  lat.Y <- lon.X <- numeric() # pre-allocating
+
   res <- dplyr::as_tibble(SH) |>
     dplyr::rename(lon = lon.X, lat = lat.Y) |>
     dplyr::mutate(N = as.integer(N)) |>
-    sf::st_as_sf(coords = c("lon", "lat"), crs = sf::st_crs(x), remove = FALSE) # |> dplyr::group_by(R)
+    sf::st_as_sf(coords = c("lon", "lat"), crs = sf::st_crs(x), remove = FALSE) |>
+    dplyr::group_by(R)
 
   return(res)
+}
+
+dispersion_grid <- function(...) {
+  .Deprecated("kernel_dispersion")
+  kernel_dispersion(...)
 }

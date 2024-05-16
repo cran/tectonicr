@@ -3,7 +3,6 @@
 \docType{package}
 \name{tectonicr}
 \alias{tectonicr}
-\alias{_PACKAGE}
 \alias{tectonicr-package}
 \title{library(tectonicr)}
 \description{
@@ -20,7 +19,7 @@ A list of documented functions may be viewed by typing
 }
 \references{
 Wdowinski (1998) "A theory of intraplate tectonics".
-\emph{JGR: Solid Earth}, 103(3), 5037–5059.
+\emph{JGR: Solid Earth}, 103(3), 5037<U+2013>5059.
 
 Stephan, T., Enkelmann, E., and Kroner, U. "Analyzing the horizontal
 orientation of the crustal stress adjacent to plate boundaries".

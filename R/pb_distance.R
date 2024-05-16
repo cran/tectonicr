@@ -36,7 +36,7 @@ get_distance <- function(lon, lat, pb.coords, tangential, km) {
     q <- which.min(abs(delta.lat))
     dist <- delta.lon[q] # longitudinal difference in degree
     if (km) {
-      dist <- deg2rad(dist) * earth_radius() * cosd(lat) # small circle distance
+      dist <- deg2rad(dist) * earth_radius() * cosd(lat) # small circle distance (PoR lat (colat) is 0 at equator!)
     }
   }
   dist
@@ -68,7 +68,7 @@ get_distance <- function(lon, lat, pb.coords, tangential, km) {
 #' @export
 #'
 #' @references Wdowinski, S. (1998). A theory of intraplate tectonics. Journal
-#' of Geophysical Research: Solid Earth, 103(3), 5037–5059.
+#' of Geophysical Research: Solid Earth, 103(3), 5037<U+2013>5059.
 #' http://dx.doi.org/10.1029/97JB03390
 #'
 #' @importFrom sf st_geometry st_cast st_coordinates
@@ -205,14 +205,12 @@ projected_pb_strike <- function(x, PoR, pb, tangential = FALSE, ...) {
     smoothr::densify(...) |>
     sf::st_coordinates()
 
-  pb.bearing <- c()
-  for (i in 1:nrow(pb.coords)) {
-    if (i == nrow(pb.coords)) {
-      pb.bearing[i] <- NA
-    } else {
-      pb.bearing[i] <- get_azimuth(pb.coords[i, 2], pb.coords[i, 1], pb.coords[i + 1, 2], pb.coords[i + 1, 1])
-    }
+  n <- nrow(pb.coords)
+  pb.bearing <- numeric(n)
+  for (i in 1:(n - 1)) {
+    pb.bearing[i] <- get_azimuth(pb.coords[i, 2], pb.coords[i, 1], pb.coords[i + 1, 2], pb.coords[i + 1, 1])
   }
+  pb.bearing[n] <- NA
 
   mapply(
     FUN = get_projected_pb_strike,

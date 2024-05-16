@@ -1,10 +1,10 @@
 mean_SC <- function(x, w, na.rm) {
   stopifnot(any(is.numeric(x)), is.logical(na.rm))
 
-  if (is.null(w)) {
-    w <- rep(1, times = length(x))
+  w <- if (is.null(w)) {
+    rep(1, times = length(x))
   } else {
-    w <- as.numeric(w)
+    as.numeric(w)
   }
 
   data <- cbind(x = x, w = w)
@@ -75,7 +75,7 @@ mean_resultant_length <- function(x, w = NULL, na.rm = TRUE) {
 #' @param axial logical. Whether the data are axial, i.e. pi-periodical
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
 #'
-#' @importFrom stats complete.cases runif
+#' @importFrom stats complete.cases runif setNames
 #'
 #' @returns numeric vector
 #'
@@ -92,7 +92,7 @@ mean_resultant_length <- function(x, w = NULL, na.rm = TRUE) {
 #' GFZ German Research Centre for Geosciences. \doi{10.2312/wsm.2019.002}
 #' * Heidbach, O., Tingay, M., Barth, A., Reinecker, J., Kurfess, D., & Mueller,
 #' B. (2010). Global crustal stress pattern based on the World Stress Map
-#' database release 2008. *Tectonophysics* **482**, 3–15,
+#' database release 2008. *Tectonophysics* **482**, 3<U+2013>15,
 #' \doi{10.1016/j.tecto.2009.07.023}
 #'
 #' @examples
@@ -218,7 +218,6 @@ circular_median <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
 #' @export
 circular_quantiles <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
   # med <- circular_median(x, w, axial, na.rm)
-
   if (axial) {
     f <- 2
     mod <- 180
@@ -306,9 +305,8 @@ circular_quantiles <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
     lq <- atan2d(mean.sin.lq, mean.cos.lq)
     uq <- atan2d(mean.sin.uq, mean.cos.uq)
 
-    quantiles <- c(lq, med, uq) / f
-    names(quantiles) <- c("25%", "50%", "75%")
-    return(quantiles %% mod)
+    res <- c(lq, med, uq) / f
+    setNames(res %% mod, nm = c("25%", "50%", "75%"))
   } else {
     message("x needs more than 3 values")
     return(NULL)
@@ -319,7 +317,7 @@ circular_quantiles <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
 #' @export
 circular_IQR <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
   quantiles <- circular_quantiles(x, w, axial, na.rm)
-  deviation_norm(as.numeric(quantiles[3] - quantiles[1]))
+  deviation_norm(as.numeric(quantiles[3]), as.numeric(quantiles[1]))
 }
 
 #' Circular distance and dispersion
@@ -370,11 +368,7 @@ NULL
 #' @rdname dispersion
 #' @export
 circular_distance <- function(x, y, axial = TRUE, na.rm = TRUE) {
-  if (axial) {
-    f <- 2
-  } else {
-    f <- 1
-  }
+  f <- ifelse(axial, 2, 1)
 
   stopifnot(length(y) == 1 | length(y) == length(x))
   if (length(y) == 1) {
@@ -427,10 +421,7 @@ circular_dispersion <- function(x, y = NULL, w = NULL, w.y = NULL, norm = FALSE,
 
     Z <- sum(w)
 
-    md <- 1
-    if (norm) {
-      md <- 2
-    }
+    md <- ifelse(norm, 2, 1)
 
     cdists <- circular_distance(x, y, axial, na.rm = FALSE)
     sum(w * cdists) / (Z * md)
@@ -439,10 +430,10 @@ circular_dispersion <- function(x, y = NULL, w = NULL, w.y = NULL, norm = FALSE,
 
 
 cdist2angle <- function(x, axial = TRUE) {
-  if (axial) {
-    f <- 2
+  f <- if (axial) {
+    2
   } else {
-    f <- 1
+    1
   }
   acosd(1 - f * x) / f
 }

@@ -1,4 +1,22 @@
-# tectonicr (development version)
+# tectonicr 0.4.0
+
+# tectonicr 0.3.0 _2024_05_14_
+
+* weighting powers added to spatial interpolation `stress2grid()`
+* `deviation_norm()` accepts two arguments
+
+# tectonicr 0.2.98 _2024-04-07_
+
+* minor fixes
+
+# tectonicr 0.2.97 _2024-04-07_
+
+* `dispersion_gird()` deprecated and replaced by `kernel_dispersion()` 
+(details in vignette E)
+
+# tectonicr 0.2.96 _2023-10-15_
+
+* cran update
 
 # tectonicr 0.2.95 _2023-10-15_
 
@@ -7,7 +25,7 @@
 * add single line and fans to `rose()`
 * add mean and confidence interval to `rose()`
 * corrected typos in manual
-* estimate kappa of von Mises distribution:` est.kapp()`
+* estimate kappa of a von Mises distribution:` est.kapp()`
 * no doubling of angles when testing Watson distribution `watson_test()`
 
 # tectonicr 0.2.94 _2023-09-25_

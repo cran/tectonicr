@@ -7,7 +7,8 @@
 #' which is aligned to the original sample according to the `align` argument.
 #' If `NULL`, an optimal width is calculated.
 #' @param FUN the function to be applied
-#' @param by.column logical. If `TRUE`, FUN is applied to each column separately.
+#' @param by.column logical. If `TRUE`, `FUN` is applied to each column
+#' separately.
 #' @param fill a three-component vector or list (recycled otherwise) providing
 #' filling values at the left/within/to the right of the data range. See the
 #' fill argument of [zoo::na.fill()] for details
@@ -16,7 +17,7 @@
 #' range. If `TRUE` (default), then the subset of indexes that are in range
 #' are passed to `FUN`. A numeric argument to partial can be used to determine
 #' the minimal window size for partial computations. See below for more details.
-#' @inheritDotParams zoo::rollapply -data
+#' @param ... optional arguments passed to [zoo::rollapply()]
 #'
 #' @returns numeric vector  with the results of the rolling function.
 #'
@@ -72,8 +73,8 @@ roll_circstats <- function(x, w = NULL,
 #'
 #' @inheritParams norm_chisq
 #' @param x,y numeric. Directions in degrees
-#' @param w,w.y (optional) Weights of `x` and `y`, respectively. A vector of positive numbers and of the same
-#' length as \code{x}.
+#' @param w,w.y (optional) Weights of `x` and `y`, respectively. A vector of
+#' positive numbers and of the same length as `x`.
 #' @inheritParams circular_dispersion
 #' @param conf.level Level of confidence: \eqn{(1 - \alpha \%)/100}.
 #' (`0.95` by default).
@@ -81,7 +82,8 @@ roll_circstats <- function(x, w = NULL,
 #' @param width integer specifying the window width (in numbers of observations)
 #' which is aligned to the original sample according to the `align` argument.
 #' If `NULL`, an optimal width is estimated.
-#' @param by.column logical. If `TRUE`, FUN is applied to each column separately.
+#' @param by.column logical. If `TRUE`, FUN is applied to each column
+#' separately.
 #' @param fill a three-component vector or list (recycled otherwise) providing
 #' filling values at the left/within/to the right of the data range. See the
 #' fill argument of [zoo::na.fill()] for details
@@ -93,7 +95,8 @@ roll_circstats <- function(x, w = NULL,
 #' @param ... optional arguments passed to [zoo::rollapply()]
 #'
 #' @returns numeric vector with the test statistic of the rolling test.
-#' `roll_dispersion_CI` returns a 2-column matrix with the lower and the upper confidence limits
+#' `roll_dispersion_CI` returns a 2-column matrix with the lower and the upper
+#' confidence limits
 #'
 #' @note If the rolling functions are applied to values that are a function of
 #' distance it is recommended to sort the values first.
@@ -131,9 +134,7 @@ roll_normchisq <- function(obs, prd, unc = NULL,
                            partial = TRUE,
                            fill = NA,
                            ...) {
-  if (is.null(width)) {
-    width <- optimal_rollwidth(obs)
-  }
+  if (is.null(width)) width <- optimal_rollwidth(obs)
 
   zoo::rollapply(
     cbind(obs, prd, unc),
@@ -155,12 +156,10 @@ roll_rayleigh <- function(obs, prd, unc = NULL,
                           partial = TRUE,
                           fill = NA,
                           ...) {
-  if (is.null(width)) {
-    width <- optimal_rollwidth(obs)
-  }
+  if (is.null(width)) width <- optimal_rollwidth(obs)
 
   zoo::rollapply(
-    cbind(obs, prd, unc),
+    cbind(obs, prd, 1 / unc),
     width = width,
     FUN = function(x) {
       suppressMessages(weighted_rayleigh(x[, 1], x[, 2], x[, 3]))$statistic
@@ -179,21 +178,17 @@ roll_dispersion <- function(x, y, w = NULL, w.y = NULL,
                             partial = TRUE,
                             fill = NA,
                             ...) {
-  if (is.null(width)) {
-    width <- optimal_rollwidth(x)
-  }
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
-  if (is.null(w.y)) {
-    w.y <- rep(1, length(x))
-  }
+  if (is.null(width)) width <- optimal_rollwidth(x)
+  if (is.null(w)) w <- rep(1, length(x))
+  if (is.null(w.y)) w.y <- rep(1, length(x))
 
   zoo::rollapply(
     cbind(x, y, w, w.y),
     width = width,
     FUN = function(x) {
-      suppressMessages(circular_dispersion(x[, 1], x[, 2], x[, 3], x[, 4], norm = TRUE))
+      suppressMessages(
+        circular_dispersion(x[, 1], x[, 2], x[, 3], x[, 4], norm = TRUE)
+      )
     },
     by.column = by.column,
     partial = partial,
@@ -208,9 +203,7 @@ roll_confidence <- function(x, conf.level = .95, w = NULL, axial = TRUE,
                             width = NULL, by.column = FALSE, partial = TRUE,
                             fill = NA,
                             ...) {
-  if (is.null(width)) {
-    width <- optimal_rollwidth(x)
-  }
+  if (is.null(width)) width <- optimal_rollwidth(x)
 
   zoo::rollapply(
     cbind(x, rep(conf.level, length(x)), w),
@@ -229,15 +222,9 @@ roll_confidence <- function(x, conf.level = .95, w = NULL, axial = TRUE,
 #' @export
 roll_dispersion_CI <- function(x, y, w = NULL, w.y = NULL, R, conf.level = .95,
                                width = NULL, by.column = FALSE, partial = TRUE, fill = NA, ...) {
-  if (is.null(width)) {
-    width <- optimal_rollwidth(x)
-  }
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
-  if (is.null(w.y)) {
-    w.y <- rep(1, length(x))
-  }
+  if (is.null(width)) width <- optimal_rollwidth(x)
+  if (is.null(w)) w <- rep(1, length(x))
+  if (is.null(w.y)) w.y <- rep(1, length(x))
 
   zoo::rollapply(
     cbind(x, y, w, w.y),
@@ -256,21 +243,20 @@ roll_dispersion_CI <- function(x, y, w = NULL, w.y = NULL, R, conf.level = .95,
 #' @export
 roll_dispersion_sde <- function(x, y, w = NULL, w.y = NULL, R, conf.level = .95,
                                 width = NULL, by.column = FALSE, partial = TRUE, fill = NA, ...) {
-  if (is.null(width)) {
-    width <- optimal_rollwidth(x)
-  }
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
-  if (is.null(w.y)) {
-    w.y <- rep(1, length(x))
-  }
+  if (is.null(width)) width <- optimal_rollwidth(x)
+  if (is.null(w)) w <- rep(1, length(x))
+  if (is.null(w.y)) w.y <- rep(1, length(x))
 
   zoo::rollapply(
     cbind(x, y, w, w.y),
     width = width,
     FUN = function(x) {
-      suppressMessages(circular_dispersion_boot(x[, 1], x[, 2], x[, 3], x[, 4], R = R, conf.level = conf.level, ...)$sde)
+      suppressMessages(
+        circular_dispersion_boot(
+          x[, 1], x[, 2], x[, 3], x[, 4],
+          R = R, conf.level = conf.level, ...
+        )$sde
+      )
     },
     by.column = by.column,
     partial = partial,
@@ -342,9 +328,7 @@ distroll_circstats <- function(x, distance, FUN, width = NULL, min_n = 2,
                                sort = TRUE, ...) {
   align <- match.arg(align)
   stopifnot(length(x) == length(distance))
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
+  if (is.null(w)) w <- rep(1, length(x))
 
   if (is.null(width)) {
     width <- seq(from = min(distance, na.rm = TRUE), to = max(distance, na.rm = TRUE), length.out = 10) |>
@@ -385,10 +369,7 @@ distroll_confidence <- function(x, distance, w = NULL, width = NULL, min_n = 2,
                                 sort = TRUE, ...) {
   align <- match.arg(align)
   stopifnot(length(x) == length(distance))
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
-
+  if (is.null(w)) w <- rep(1, length(x))
   if (is.null(width)) {
     width <- seq(min(distance, na.rm = TRUE), max(distance, na.rm = TRUE), length.out = 10) |>
       diff() |>
@@ -429,15 +410,9 @@ distroll_dispersion <- function(x, y, w = NULL, w.y = NULL, distance,
                                 sort = TRUE, ...) {
   align <- match.arg(align)
   stopifnot(length(x) == length(distance))
-  if (length(y) == 1) {
-    y <- rep(y, length(x))
-  }
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
-  if (is.null(w.y)) {
-    w.y <- rep(1, length(x))
-  }
+  if (length(y) == 1) y <- rep(y, length(x))
+  if (is.null(w)) w <- rep(1, length(x))
+  if (is.null(w.y)) w.y <- rep(1, length(x))
 
   if (is.null(width)) {
     width <- seq(min(distance, na.rm = TRUE), max(distance, na.rm = TRUE), length.out = 10) |>
@@ -479,15 +454,9 @@ distroll_dispersion_sde <- function(x, y, w = NULL, w.y = NULL, distance,
                                     sort = TRUE, ...) {
   align <- match.arg(align)
   stopifnot(length(x) == length(distance))
-  if (length(y) == 1) {
-    y <- rep(y, length(x))
-  }
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  }
-  if (is.null(w.y)) {
-    w.y <- rep(1, length(x))
-  }
+  if (length(y) == 1) y <- rep(y, length(x))
+  if (is.null(w)) w <- rep(1, length(x))
+  if (is.null(w.y)) w.y <- rep(1, length(x))
 
   if (is.null(width)) {
     width <- seq(min(distance, na.rm = TRUE), max(distance, na.rm = TRUE), length.out = 10) |>
