@@ -128,22 +128,155 @@ PositionCenterSpoke <- ggplot2::ggproto("PositionCenterSpoke", ggplot2::Position
   }
 )
 
-#' Rose Diagram
+#' Quantile-Quantile Linearised Plot for Circular Distributions
 #'
-#' @param clockwise Logical. Whether angles increase in the
-#' clockwise direction (`clockwise=TRUE`, the default) or anti-clockwise,
-#' counter-clockwise direction (`FALSE`).
+#'
+#' Uniformly distributed orientations should yield a straight line through the
+#' origin. Systematic departures from linearity will indicate preferred
+#' orientation in some manner.
+#'
+#' @param x numeric. Angles in degrees
+#' @param axial Logical. Whether data are uniaxial (`axial=FALSE`)
+#' @param xlab,ylab,main plot labels.
+#' @param ... graphical parameters
+#'
+#' @return plot
+#' @importFrom graphics plot abline lines points
+#' @export
+#'
+#' @references Borradaile, G. J. (2003). Statistics of earth
+#' science data: their distribution in time, space, and orientation (Vol. 351,
+#' p. 329). Berlin: Springer.
+#'
+#' @examples
+#' x_vm <- rvm(100, mean = 0, kappa = 2)
+#' circular_qqplot(x_vm, pch = 20)
+#'
+#' x_norm <- rnorm(100, mean = 0, sd = 25)
+#' circular_qqplot(x_norm, pch = 20)
+#'
+#' x_unif <- runif(100, 0, 360)
+#' circular_qqplot(x_unif, pch = 20)
+circular_qqplot <- function(x, axial = TRUE,
+                            xlab = paste("i/(n+1)"),
+                            ylab = NULL, main = "Circular Quantile-Quantile Plot", ...) {
+  if (axial) {
+    f <- 2
+  } else {
+    f <- 1
+  }
+  if (is.null(ylab)) {
+    ylab <- paste0(deparse1(substitute(x)), "/", 360 / f)
+  }
+
+  x <- (x %% (360 / f)) / (360 / f)
+  x <- sort(x)
+  n <- length(x)
+  xin <- seq_along(x) / (n + 1)
+
+  graphics::plot(xin, x,
+    type = "p", xlim = c(0, 1), ylim = c(0, 1), asp = 1,
+    xlab = xlab, ylab = ylab, main = main,
+    sub = bquote("N" == .(n)),
+    ...
+  )
+  graphics::abline(a = 0, b = 1, col = "slategrey")
+  graphics::lines(xin, x)
+  invisible(xin)
+  # graphics::points(xin, x, col = "slategrey")
+}
+
+#' von Mises Quantile-Quantile Plot
+#'
+#' Produces a Q-Q plot of the data against a specified von Mises distribution
+#' to graphically assess the goodness of fit of the model.
+#'
+#' @param x numeric. Angles in degrees
+#' @param w numeric. optional weightings for `x` to estimate `mean` and `kappa`.
+#' @param axial Logical. Whether data are uniaxial (`axial=FALSE`)
+#' @param xlab,ylab,main plot labels.
+#' @param mean numeric. Circular mean of the von Mises distribution. If `NULL`,
+#' it will be estimated from `x`.
+#' @param kappa numeric. Concentration parameter of the von Mises distribution.
+#' If `NULL`, it will be estimated from `x`.
+#' @param ... graphical parameters
+#'
+#' @return plot
+#' @importFrom stats ecdf
+#' @importFrom graphics plot lines
+#'
+#' @export
+#'
+#' @examples
+#' x_vm <- rvm(100, mean = 0, kappa = 4)
+#' vm_qqplot(x_vm, axial = FALSE, pch = 20)
+#'
+#' x_unif <- runif(100, 0, 360)
+#' vm_qqplot(x_unif, axial = FALSE, pch = 20)
+vm_qqplot <- function(x, w = NULL, axial = TRUE, mean = NULL, kappa = NULL,
+                      xlab = "von Mises quantile function",
+                      ylab = "Empirical quantile function",
+                      main = "von Mises Q-Q Plot", ...) {
+  if (axial) {
+    f <- 2
+  } else {
+    f <- 1
+  }
+
+  n <- length(x)
+
+  # if (stretch) {
+  #   k <- 4
+  # } else {
+  #   k <- 2
+  # }
+
+  if (is.null(mean)) mean <- circular_mean(x, w = w, axial = axial)
+  if (is.null(kappa)) kappa <- est.kappa(x, w = w, axial = axial)
+
+  caption <- bquote(
+    bar(alpha) == .(round(mean, 1)) * degree ~ "|" ~ kappa == .(round(kappa, 1))
+  )
+
+  xf <- (x * f) %% 360
+  xf <- sort(xf)
+
+  edf <- stats::ecdf(xf)
+
+
+  # z <- sind((xf - mean*f) / k)
+  #
+  # z_sort <- sort(z) #|> scales::rescale(c(-1, 1))
+  #
+  #
+  # probs <- seq(0, 1, length.out = n)
+  # quantiles <- qvm(edf(xf), mean = 0, kappa = kappa, from = 0)
+  # quantiles <- qvm(probs, mean = 0, kappa = kappa, from = 0)
+
+  #
+  # sin_q <- sind(quantiles / k)
+
+  # graphics::plot(0, 0, type = "n", xlim = c(-1, 1), ylim = c(-1, 1), asp = 1, xlab = xlab, ylab = ylab, main = main, ...)
+  # graphics::abline(a = 0, b = 1, col = "slategrey")
+  # graphics::points(sin_q, z_sort, pch=20)
+
+  tqf <- qvm(edf(xf), mean * f, kappa, from = 0)
+  #
+  graphics::plot(tqf / f, xf / f, xlim = c(0, 360 / f), ylim = c(0, 360 / f), asp = 1, xlab = xlab, ylab = ylab, main = main, sub = bquote("N" == .(n)), ...)
+  graphics::abline(a = 0, b = 1, col = "slategrey")
+  mtext(caption)
+  invisible(tqf)
+}
+
+
+# Circular diagram -----------------------------------------------------------------
+
+
+#' Circular plot
+#'
 #' @param main Character string specifying the title of the plot.
 #' @param at Optional vector of angles at which tick marks should be plotted.
 #' Set `at=numeric(0)` to suppress tick marks.
-#' @param start The starting direction for measurement of angles, that is, the
-#' spatial direction which corresponds to a measured angle of zero. Either a
-#' character string giving a compass direction (`"N"` for north, `"S"` for south,
-#' `"E"` for east, or `"W"` for west) or a number giving the angle from the the
-#' horizontal (East) axis to the starting direction. For example, if
-#' `clockwise=FALSE`, then `start=90` and `start="N"` are
-#' equivalent. The default is to measure angles anti-clockwise from the
-#' horizontal axis (East direction).
 #' @param labels Either a logical value indicating whether to plot labels
 #' next to the tick marks, or a vector of labels for the tick marks.
 #' @param cborder logical. Border of rose plot.
@@ -153,11 +286,14 @@ PositionCenterSpoke <- ggplot2::ggproto("PositionCenterSpoke", ggplot2::Position
 #' @import spatstat.explore
 #' @importFrom spatstat.univar whist
 #'
+#' @note Polar diagram where angles increase clockwise.
+#'
+#' @export
+#'
 #' @return none
 #'
 #' @keywords internal
-rose_baseplot <- function(start = -90,
-                          clockwise = TRUE, main = NULL, labels = TRUE,
+circular_plot <- function(main = NULL, labels = TRUE,
                           at = seq(0, 360 - 45, 45), cborder = TRUE, ...) {
   unit <- "degree"
   ymax <- 1
@@ -191,15 +327,14 @@ rose_baseplot <- function(start = -90,
   )
   spatstat.explore::circticks(
     R,
-    at = at, unit = unit, start = start, clockwise = clockwise, labels = labels
+    at = at, unit = unit, start = -90, clockwise = TRUE, labels = labels
   )
   return(invisible(result))
 }
 
 
-rose_histogram <- function(x, ..., start = -90,
-                           clockwise = TRUE, main, labels = TRUE, at = NULL,
-                           cborder = TRUE, axial = FALSE) {
+rose_histogram <- function(x, ..., main, labels = TRUE, at = NULL,
+                           cborder = TRUE, axial = FALSE, add = FALSE) {
   if (missing(main) || is.null(main)) {
     main <- spatstat.utils::short.deparse(substitute(x))
   }
@@ -208,28 +343,11 @@ rose_histogram <- function(x, ..., start = -90,
   bw <- x$binwidth
   y <- x$density
 
-  rose_baseplot(start, clockwise, main, labels, at, cborder)
+  if (!add) circular_plot(smain = main, labels, at = at, cborder = cborder)
 
   for (i in seq_along(y)) {
     rose_fan(bks[i], d = bw, radius = y[i], axial = axial, add = TRUE, ...)
   }
-
-  # ang <- spatstat.explore::ang2rad(
-  #     bks, unit = unit, start = start, clockwise = clockwise
-  #     )
-  #   ang <- deg2rad(bks)
-  #   eps <- min(diff(ang), pi / 128) / 2
-  #   eps <- min(bw, pi / 128) / 2
-  #   for (i in seq_along(y)) {
-  #     aa <- seq(ang[i], ang[i + 1], by = eps)
-  #     aa[length(aa)] <- ang[i + 1]
-  #     yi <- y[i]
-  #     xx <- c(0, yi * cos(aa), 0)
-  #     yy <- c(0, yi * sin(aa), 0)
-  #     spatstat.utils::do.call.matched(polygon, list(x = xx, y = yy, ...))
-  #   }
-  # }
-  # return(invisible(result))
 }
 
 graphicsAargh <- c(
@@ -289,7 +407,7 @@ rose_freq <- function(x, bins = NULL, ..., weights = NULL, binwidth = NULL,
 
   result <- numeric()
   result <- h$result
-  otherargs <- h$otherargs
+  result$otherargs <- h$otherargs
 
   freqs <- spatstat.univar::whist(
     x = x, breaks = breaks, weights = weights
@@ -350,11 +468,6 @@ symmetric_bw <- function(x) {
   div <- 180 / seq(1, 180, 1)
   cond <- is.naturalnumber(div) & div < 180
   allowed <- div[cond]
-  # allowed <- data.frame(x = seq(1, 180, 1)) |>
-  #   dplyr::mutate(div = 180 / x) |>
-  #   dplyr::filter(is.naturalnumber(div), div < 180) |>
-  #   dplyr::pull(div)
-  # allowed <- c(2, 3, 4, 5, 6, 9, 10, 12, 15, 18, 20, 24, 30, 36, 40, 60, 72, 90, 120, 180)
   target.index <- which(abs(allowed - x) == min(abs(allowed - x)))
   min(allowed[target.index])
 }
@@ -383,9 +496,6 @@ add_end <- function(x, end) {
 #' @param equal_area Logical. Whether the radii of the bins are proportional to
 #' the frequencies (`equal_area=FALSE`, i.e. equal-angle) or proportional to the
 #' square-root of the frequencies (`equal_area=TRUE`, the default).
-#' @param clockwise Logical. Whether angles increase in the
-#' clockwise direction (`clockwise=TRUE`, the default) or anti-clockwise,
-#' counter-clockwise direction (`FALSE`).
 #' @param muci logical. Whether the mean and its 95% CI are added to the plot
 #' or not.
 #' @param round_binwidth integer. Number of decimal places of bin width (0 by
@@ -394,12 +504,17 @@ add_end <- function(x, end) {
 #' (`"N"` by default)
 #' @param main,sub Character string specifying the title and subtitle of the
 #' plot. If `sub = NULL`, it will show the bin width.
-#' @param at Optional vector of angles at which tick marks should be plotted.
-#' Set `at=numeric(0)` to suppress tick marks.
+#' @inheritParams circular_plot
 #' @param col fill color of bins
 #' @param dots logical. Whether a circular dot plot should be added
 #' (`FALSE` is the default).
+#' @param jitter_factor Add a small amount of noise to the angles' radius that
+#' is added to `scale`. Jitter is ignored when `stack==TRUE`).
+#' If `0`, no jitter is added (by default); if negative, the points fall into
+#' the circle.
+#' @param stack logical. Groups and stacks the dots if `TRUE`. Default is `FALSE`.
 #' @param dot_cex,dot_pch,dot_col Plotting arguments for circular dot plot
+#' @param add logical.
 #' @param ... Additional arguments passed to [spatstat.explore::rose()].
 #'
 #' @note If `bins` and `binwidth` are `NULL`, an optimal bin width will be
@@ -411,7 +526,8 @@ add_end <- function(x, end) {
 #'
 #' If `"axial" == TRUE`, the binwidth is adjusted to guarantee symmetrical fans.
 #'
-#' @return A window (class `"owin"`) containing the plotted region.
+#' @return A window (class `"owin"`) containing the plotted region or a `list`
+#' of the calculated frequencies.
 #'
 #' @importFrom spatstat.explore rose
 #' @importFrom spatstat.utils short.deparse
@@ -424,34 +540,58 @@ add_end <- function(x, end) {
 #' x <- rvm(100, mean = 90, k = 5)
 #' rose(x, axial = FALSE, border = TRUE)
 #'
-#' data("san_andreas")
-#' rose(san_andreas$azi, dots = TRUE, main = "dot plot")
+#' data("san_andreas") #'
+#' rose(san_andreas$azi, main = "equal area")
+#' rose(san_andreas$azi, equal_area = FALSE, main = "equal angle")
+#'
+#' # weighted frequencies:
 #' rose(san_andreas$azi, weights = 1 / san_andreas$unc, main = "weighted")
+#'
+#' # add dots
+#' rose(san_andreas$azi, dots = TRUE, main = "dot plot", jitter = .2)
+#' rose(san_andreas$azi,
+#'   dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21,
+#'   main = "stacked dot plot"
+#' )
 rose <- function(x, weights = NULL, binwidth = NULL, bins = NULL, axial = TRUE,
-                 equal_area = TRUE, clockwise = TRUE, muci = TRUE,
+                 equal_area = TRUE, muci = TRUE,
                  round_binwidth = 0, mtext = "N", main = NULL, sub = NULL,
-                 at = seq(0, 360 - 45, 45),
+                 at = seq(0, 360 - 45, 45), cborder = TRUE, labels = TRUE,
                  col = "grey", dots = FALSE, dot_pch = 1, dot_cex = 1,
-                 dot_col = "grey", ...) {
-  if (missing(main) || is.null(main)) {
-    main <- spatstat.utils::short.deparse(substitute(x))
+                 dot_col = "slategrey", stack = FALSE, jitter_factor = 0,
+                 add = FALSE, ...) {
+  if (!add) {
+    if (missing(main) || is.null(main)) {
+      main <- spatstat.utils::short.deparse(substitute(x))
+    }
+    circular_plot(main = main, labels = labels, at = at, cborder = cborder)
+  }
+
+  if (axial) {
+    x <- x %% 180
+    x[x >= 180] <- 180 - 2 * .Machine$double.eps
+  } else {
+    x <- x %% 360
+    x[x >= 360] <- 360 - 4 * .Machine$double.eps
   }
 
   freqs <- rose_freq(
     x,
     bins = bins, ..., weights = weights, binwidth = binwidth,
     round_binwidth = round_binwidth, equal_area = equal_area,
-    main = main, axial = axial
+    axial = axial
   )
 
   rose_histogram(freqs, ...,
-    clockwise = clockwise,
     col = col, axial = axial,
-    main = main, labels = TRUE, at = at, cborder = TRUE
+    main = main, labels = TRUE, at = at, cborder = TRUE, add = TRUE
   )
 
   if (dots) {
-    rose_dots(x, axial, cex = dot_cex, pch = dot_pch, col = dot_col)
+    plot_points(x,
+      axial = axial, stack = stack, cex = dot_cex, pch = dot_pch,
+      col = dot_col, jitter_factor = jitter_factor, add = TRUE
+    )
   }
 
   if (is.null(sub)) sub <- paste("Bin width:", freqs$binwidth)
@@ -459,49 +599,16 @@ rose <- function(x, weights = NULL, binwidth = NULL, bins = NULL, axial = TRUE,
   graphics::mtext(mtext)
 
   if (muci) rose_stats(x, weights = weights, axial = axial)
+  invisible(freqs)
 }
 
-rose_dots <- function(x, axial, ...) {
-  if (axial) {
-    x_shift <- (x + 180) %% 360
-    x <- c(x, x_shift)
-  }
 
-  scale <- 1.1 #* max(freqs$density)
-  u <- deg2rad(90 - x)
-  n <- length(x)
-  z <- cos(u) * scale
-  y <- sin(u) * scale
-  # if (stack == FALSE) {
-  graphics::points(z, y, ...)
-  # } else {
-  #   bins <- 180/binwidth
-  #   bins.count <- c(1:bins)
-  #   arc <- (2 * pi) / bins
-  #   for (i in 1:bins) {
-  #     bins.count[i] <- sum(u <= i * arc & u > (i - 1) * arc)
-  #   }
-  #   mids <- seq(arc / 2, 2 * pi - pi / bins, length = bins)
-  #   index <- pts_cex / dotsep
-  #   for (i in 1:bins) {
-  #     if (bins.count[i] != 0) {
-  #       for (j in 0:(bins.count[i] - 1)) {
-  #         r <- 1 + j * index
-  #         z <- r * cos(mids[i]) * scale
-  #         y <- r * sin(mids[i]) * scale
-  #         points(z, y, cex = pts_cex, pch = pts_pch)
-  #       }
-  #     }
-  #   }
-  # }
-}
-
-#' Lines and fans in rose diagram
+#' Direction Lines and Fans in Circular Diagram
 #'
 #' @param x angles in degrees
 #' @param d width of a fan (in degrees)
-#' @param radius of the rose diagram
-#' @param axial Logical. Whether x are uniaxial (`axial=FALSE`)
+#' @param radius of the plotted circle
+#' @param axial Logical. Whether `x` are uniaxial (`axial=FALSE`)
 #' or biaxial (`TRUE`, the default).
 #' @param add logical. Add to existing plot?
 #' @param ... optional arguments passed to [graphics::segments()] or
@@ -512,11 +619,11 @@ rose_dots <- function(x, axial, ...) {
 #' @importFrom graphics segments polygon
 #' @name rose_geom
 #' @examples
-#' a <- c(0, 10, 45)
+#' angles <- c(0, 10, 45)
 #' radius <- c(.7, 1, .2)
 #' lwd <- c(2, 1, .75)
 #' col <- c(1, 2, 3)
-#' rose_line(c(0, 10, 45), radius = radius, axial = FALSE, add = FALSE, lwd = lwd, col = col)
+#' rose_line(angles, radius = radius, axial = FALSE, add = FALSE, lwd = lwd, col = col)
 NULL
 
 #' @rdname rose_geom
@@ -526,9 +633,7 @@ rose_line <- function(x, radius = 1, axial = TRUE, add = TRUE, ...) {
   tx <- radius * cos(xrad)
   ty <- radius * sin(xrad)
 
-  if (!add) {
-    rose_baseplot()
-  }
+  if (!add) circular_plot()
   graphics::segments(0, 0, tx, ty, ...)
   if (axial) {
     graphics::segments(0, 0, -tx, -ty, ...)
@@ -550,15 +655,12 @@ rose_fan <- function(x, d, radius = 1, axial = TRUE, add = TRUE, ...) {
   xx <- c(0, tx, 0)
   yy <- c(0, ty, 0)
 
-  if (!add) {
-    rose_baseplot()
-  }
+  if (!add) circular_plot()
 
   graphics::polygon(x = xx, y = yy, ...)
   if (axial) {
     graphics::polygon(x = -xx, y = -yy, ...)
   }
-  invisible()
 }
 
 #' Show Average Direction and Spread in Rose Diagram
@@ -570,11 +672,12 @@ rose_fan <- function(x, d, radius = 1, axial = TRUE, add = TRUE, ...) {
 #' @param axial Logical. Whether data are uniaxial (`axial=FALSE`)
 #' or biaxial (`TRUE`, the default).
 #' @param avg character. The average estimate for x. Either the circular mean
-#' (`"mean"`, the default) or the circular Quasi Median (`"median"`)
+#' (`"mean"`, the default), the circular Quasi Median (`"median"`), or the
+#' sample median (`"sample_median"`).
 #' @param spread character. The measure of spread to be plotted as a fan.
-#' Either the 95% confidence interval (`"CI"`, the default), the circular
-#' standard deviation (`"sd"`), or the Quasi interquartile range on the circle
-#' (`"IQR"`). `NULL` if no fan should be drawn.
+#' Either 95% confidence interval (`"CI"`, the default), Fishers confidence interval (`"fisher"`), the circular
+#' standard deviation (`"sd"`), the Quasi interquartile range on the circle
+#' (`"IQR"`), or the sampke median deviation (`"mdev"`). `NULL` if no fan should be drawn.
 #' @param avg.col color for the average line
 #' @param avg.lty line type of the average line
 #' @param avg.lwd  line width of the average line
@@ -583,12 +686,14 @@ rose_fan <- function(x, d, radius = 1, axial = TRUE, add = TRUE, ...) {
 #' @param spread.lty line type of the spread fan's border
 #' @param spread.lwd line width of the spread fan's border
 #' @param add logical.
-#' @param ... optional arguments to `rose_baseplot()` if add is `FALSE`.
+#' @param ... optional arguments to `circular_plot()` if add is `FALSE`.
 #' @importFrom ggplot2 alpha
 #'
 #' @seealso [rose()] for plotting the rose diagram, and
-#' [circular_mean()], [circular_median()], [confidence_interval()],
-#' [circular_sd()], [circular_IQR()] for statistical parameters.
+#' [circular_mean()], [circular_median()], [circular_sample_median()],
+#' [confidence_interval()], [confidence_interval_fisher()],
+#' [circular_sd()], [circular_IQR()], [circular_sample_median_deviation()]
+#' for statistical parameters.
 #'
 #' @returns No return value, called for side effects
 #' @export
@@ -596,26 +701,29 @@ rose_fan <- function(x, d, radius = 1, axial = TRUE, add = TRUE, ...) {
 #' @examples
 #' data("san_andreas")
 #' rose(san_andreas$azi, weights = 1 / san_andreas$unc, muci = FALSE)
-#' rose_stats(san_andreas$azi, weights = 1 / san_andreas$unc, avg = "median", spread = "IQR")
-rose_stats <- function(x, weights = NULL, axial = TRUE, avg = c("mean", "median"), spread = c("CI", "sd", "IQR"),
+#' rose_stats(san_andreas$azi, weights = 1 / san_andreas$unc, avg = "sample_median", spread = "mdev")
+rose_stats <- function(x, weights = NULL, axial = TRUE, avg = c("mean", "median", "sample_median"), spread = c("CI", "fisher", "sd", "IQR", "mdev"),
                        avg.col = "#85112AFF", avg.lty = 2, avg.lwd = 1.5,
                        spread.col = ggplot2::alpha("#85112AFF", .2), spread.border = FALSE, spread.lty = NULL, spread.lwd = NULL, add = TRUE, ...) {
   avg <- match.arg(avg)
   mu <- switch(avg,
     mean = circular_mean(x, weights, axial),
-    median = circular_median(x, weights, axial)
+    median = circular_median(x, weights, axial),
+    sample_median = circular_sample_median(x, axial)
   )
-  mu_text <- switch(avg,
-    mean = "Mean: ",
-    median = "Median: "
-  )
+  # mu_text <- switch(avg,
+  #   mean = "Mean: ",
+  #   median = "Median: "
+  # )
 
   if (!is.null(spread)) {
     spread <- match.arg(spread)
     ci <- switch(spread,
-      CI = confidence_angle(x, w = weights, axial = axial),
+      CI = confidence_interval(x, w = weights, axial = axial)$conf.angle,
+      fisher = confidence_interval_fisher(x, w = weights, axial = axial, quiet = TRUE)$conf.angle,
       sd = circular_sd(x, weights, axial),
-      IQR = circular_IQR(x, weights, axial)
+      IQR = circular_IQR(x, weights, axial),
+      mdev = circular_sample_median_deviation(x, axial)
     )
     rose_fan(mu, 2 * ci,
       radius = 1.1, axial = axial, col = spread.col,
@@ -628,7 +736,230 @@ rose_stats <- function(x, weights = NULL, axial = TRUE, avg = c("mean", "median"
     radius = 1.1, axial = axial, col = avg.col, lty = avg.lty,
     lwd = avg.lwd, add = add, ...
   )
+  invisible(c(mu, ci))
 }
+
+# Dot plot ---------------------------------------------------------------------
+
+
+#' Add Points to a Circular Plot
+#'
+#' Add points to a plot of circular data points on the current graphics device.
+#'
+#' @param x Data to be plotted. A numeric vector containing angles (in degrees).
+#' @param axial Logical. Whether data are uniaxial (`axial=FALSE`)
+#' or biaxial (`TRUE`, the default).
+#' @param stack logical: if `TRUE`, points are stacked on the perimeter of the
+#' circle.
+#' Otherwise, all points are plotted on the perimeter of the circle. Default is
+#' `FALSE`.
+#' @param binwidth numeric. Bin width (in degrees) for the stacked dot plots.
+#' ignored when `stack==FALSE`. Is set to `1` degree by default.
+#' @param cex character (or symbol) expansion: a numerical vector. This works as
+#' a multiple of `par("cex")`.
+#' @param sep constant used to specify the distance between stacked points, if
+#' `stack==TRUE` or in the case of more than one dataset. Default is `0.025`;
+#' smaller values will create smaller spaces.
+#' @param jitter_factor numeric. Adds a small amount of random variation to the
+#' location of each points along radius that is added to `scale`. Jitter is
+#' ignored when `stack==TRUE`). If `0`, no jitter is added (by default); if
+#' negative, the points fall into the circle.
+#' @param ... Further graphical parameters may also be supplied as arguments.
+#' @param scale radius of plotted circle. Default is `1.1`.
+#' Larger values shrink the circle, while smaller values enlarge the circle.
+#' @param add logical
+#' @inheritParams circular_plot
+#'
+#' @importFrom graphics points
+#'
+#' @return A list with information on the plot
+#' @export
+#'
+#' @examples
+#' x <- rvm(100, mean = 90, k = 5)
+#' plot_points(x, add = FALSE)
+#' plot_points(x, jitter_factor = .2, add = FALSE) # jittered plot
+#' plot_points(x, stack = TRUE, binwidth = 3, add = FALSE) # stacked plot
+plot_points <- function(x, axial = TRUE, stack = FALSE, binwidth = 1, cex = 1, sep = 0.025, jitter_factor = 0, ..., scale = 1.1, add = TRUE,
+                        main = NULL, labels = TRUE,
+                        at = seq(0, 360 - 45, 45), cborder = TRUE) {
+  if (!add) {
+    if (missing(main) || is.null(main)) {
+      main <- spatstat.utils::short.deparse(substitute(x))
+    }
+    circular_plot(main = main, labels = labels, at = at, cborder = cborder)
+  }
+
+  f <- as.numeric(axial) + 1
+
+  if (!stack) {
+    if (axial) {
+      x_shift <- (x + 180) %% 360
+      x <- c(x, x_shift)
+    }
+    xr <- deg2rad(x)
+    u <- pi / 2 - xr
+    n <- length(x)
+    r <- scale + runif(n, min(0, jitter_factor), max(0, jitter_factor))
+    z <- cos(u) * r
+    y <- sin(u) * r
+    graphics::points(z, y, cex = cex, ...)
+  } else {
+    freqs <- rose_freq(x, axial = axial, binwidth = binwidth)
+    if (axial) {
+      freqs$mids <- freqs$mids %% 180
+      freqs$count <- rep(freqs$count, 2)
+      freqs$mids <- c(freqs$mids, freqs$mids + 180)
+    }
+
+    bins <- f * 180 / freqs$binwidth
+    bins.count <- freqs$count
+    mids <- deg2rad(-90 - freqs$mids)
+    index <- cex * sep
+    # index <- cex * freqs$binwidth
+
+    for (i in 1:bins) {
+      if (bins.count[i] > 0) {
+        for (j in 0:(bins.count[i] - 1)) {
+          r <- scale + j * index
+          z <- r * cos(mids[i])
+          y <- r * sin(mids[i])
+          graphics::points(z, y, cex = cex, ...)
+        }
+      }
+    }
+  }
+}
+
+# Plot density lines on rose ---------------------------------------------------
+
+calc_circular_density <- function(x, z, kappa) {
+  nx <- length(x)
+  # if (kernel == "vonmises") {
+  y <- sapply(z, dvm, mean = x, kappa = kappa)
+  # }
+  # else if (kernel == "wrappednormal") {
+  #   rho <- exp(-bw^2/2)
+  #   y <- sapply(z, DwrappednormalRad, mu = x, rho = rho,
+  #               K = K, min.k = min.k)
+  # }
+  # else {
+  #   stop("other kernels not implemented yet")
+  # }
+  apply(y, 2, sum) / nx
+}
+
+
+circular_density <- function(x, z = NULL, kappa, na.rm = TRUE, from = 0, to = 360, n = 512, axial = TRUE) {
+  f <- as.numeric(axial) + 1
+  x <- x * f
+
+  if (is.null(z)) {
+    z <- seq(from = from, to = to, length = n)
+  } else {
+    if (!is.numeric(z)) {
+      stop("argument 'z' must be numeric")
+    }
+    namez <- deparse(substitute(z))
+    z.na <- is.na(z)
+    if (any(z.na)) {
+      if (na.rm) {
+        z <- z[!z.na]
+      } else {
+        stop("z contains missing values")
+      }
+    }
+    z.finite <- is.finite(z)
+    if (any(!z.finite)) {
+      z <- z[z.finite]
+    }
+  }
+
+  calc_circular_density(x, z, kappa)
+}
+
+circular_lines <- function(x, y, join = FALSE, nosort = FALSE, offset = 1.1, shrink = 1, axial = TRUE, ...) {
+  x <- deg2rad(90 - x)
+
+  if (axial) {
+    x <- c(x, x + pi)
+    y <- rep(y, 2)
+  }
+
+
+  n <- length(x)
+  if (!nosort) {
+    xorder <- order(x)
+    x <- x[xorder]
+    y <- y[xorder]
+    spacings <- c(diff(x), x[1] - x[n] + 2 * pi)
+    pos <- which.max(spacings)[1]
+    if (pos == n) {
+      xorder <- 1:n
+    } else {
+      xorder <- c((pos + 1):n, 1:pos)
+    }
+  } else {
+    xorder <- 1:n
+  }
+  z <- (y / shrink + offset) * cos(x)
+  w <- (y / shrink + offset) * sin(x)
+  z <- z[xorder]
+  w <- w[xorder]
+  if (join) {
+    z <- c(z, z[1])
+    w <- c(w, w[1])
+  }
+  graphics::lines(x = z, y = w, ...)
+  invisible(list(x = z, y = w))
+}
+
+
+#' Circular density plot
+#'
+#' Plot the multiples of a von Mises density distribution
+#'
+#' @param x Data to be plotted. A numeric vector containing angles (in degrees).
+#' @param kappa Concentration parameter for the von Mises distribution.
+#' Small kappa gives smooth density lines.
+#' @param axial Logical. Whether data are uniaxial (`axial=FALSE`)
+#' or biaxial (`TRUE`, the default).
+#' @param n the number of equally spaced points at which the density is to be estimated.
+#' @param norm_density logical. Normalize the density?
+#' @param scale radius of plotted circle. Default is `1.1`.
+#' @param shrink parameter that controls the size of the plotted function. Default is 1.
+#' @param ... Further graphical parameters may also be supplied as arguments.
+#' @param add logical. Add to existing plot? (`TRUE` by default).
+#' @inheritParams circular_plot
+#'
+#' @seealso [dvm()]
+#' @return plot or calculated densities as numeric vector
+#' @export
+#'
+#' @examples
+#' rose(san_andreas$azi, dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21)
+#' plot_density(san_andreas$azi, kappa = 10, col = "seagreen", shrink = 1.5)
+#' plot_density(san_andreas$azi, kappa = 10, col = "seagreen", add = FALSE, scale = .6)
+plot_density <- function(x, kappa, axial = TRUE, n = 512, norm_density = TRUE, ...,
+                         scale = 1.1, shrink = 1,
+                         add = TRUE, main = NULL, labels = TRUE,
+                         at = seq(0, 360 - 45, 45), cborder = TRUE) {
+  if (!add) {
+    if (missing(main) || is.null(main)) {
+      main <- spatstat.utils::short.deparse(substitute(x))
+    }
+    circular_plot(main = main, labels = labels, at = at, cborder = cborder)
+  }
+
+
+  f <- as.numeric(axial) + 1
+  d <- circular_density(x, kappa = kappa, n = n, axial = axial)
+  if (norm_density) d / max(d)
+  circular_lines(seq(0, 360, length = f * n), rep(d, f), axial = FALSE, n, offset = scale, shrink = shrink, ...)
+  invisible(d)
+}
+
+
 
 
 #' Plotting stress analysis results
@@ -654,7 +985,7 @@ rose_stats <- function(x, weights = NULL, axial = TRUE, avg = c("mean", "median"
 #' @importFrom dplyr arrange mutate
 #'
 #' @seealso [PoR_shmax()], [distance_from_pb()], [circular_mean()],
-#' [circular_dispersion()], [confidence_angle()], [norm_chisq()],
+#' [circular_dispersion()], [confidence_interval_fisher()], [norm_chisq()],
 #' [weighted_rayleigh()]
 #'
 #' @details
@@ -703,6 +1034,7 @@ quick_plot <- function(
   t <- data.frame(azi, distance, prd, unc,
     regime = factor(regime, levels = c("U", "N", "NS", "S", "TS", "T"))
   ) |>
+    dplyr::filter(!is.na(azi)) |>
     dplyr::arrange(distance) |>
     dplyr::mutate(
       nchisq_i = (deviation_norm(azi, prd) / unc)^2 / (90 / unc)^2,
@@ -713,7 +1045,6 @@ quick_plot <- function(
         FUN = circular_mean,
         width = width
       ),
-      # roll_conf95 = roll_confidence(azi, .95, 1 / unc, width = width),
       roll_sd = roll_circstats(
         azi,
         w = 1 / unc,
@@ -731,8 +1062,7 @@ quick_plot <- function(
         prd,
         w = 1 / unc,
         width = width
-      ) # ,
-      # roll_disp_CI = roll_dispersion_CI(azi, prd, w = 1 / unc, R = 100, width = width)
+      )
     )
 
   # add lower and upper period to data for plotting
@@ -741,17 +1071,16 @@ quick_plot <- function(
   t2 <- rbind(tmin, t, tmax)
 
   nchisq <- norm_chisq(azi, prd, unc)
-  suppressMessages(
-    rt <- weighted_rayleigh(azi, mu = prd, w = 1 / unc)
-  )
+  rt <- weighted_rayleigh(azi, mu = prd, w = 1 / unc, quiet = TRUE)
   azi.PoR.mean <- circular_mean(azi, 1 / unc)
   azi.PoR.sd <- circular_sd(azi, 1 / unc)
   disp <- circular_dispersion(azi, prd, 1 / unc)
-  CI <- confidence_interval(azi, w = 1 / unc)
-  CI_ang <- confidence_angle(azi, w = 1 / unc)
+  CIF <- confidence_interval_fisher(azi, w = 1 / unc, quiet = TRUE)
+  CI <- CIF$conf.interval
+  CI_ang <- CIF$conf.angle
 
   subtitle <-
-    bquote(95 * "% CI [" * .(round(CI$conf.interval[1])) * degree * "," ~ .(round(CI$conf.interval[2])) * degree * "] | R" == .(signif(rt$statistic, 2)) ~ ("p" == .(signif(rt$p.value, 2))))
+    bquote(95 * "% CI [" * .(round(CI[1])) * degree * "," ~ .(round(CI[2])) * degree * "] | R" == .(signif(rt$statistic, 2)) ~ ("p" == .(signif(rt$p.value, 2))))
 
   subtitle_rose <- bquote(atop(
     "N" == .(length(azi)),
@@ -767,7 +1096,7 @@ quick_plot <- function(
     0,
     type = "n",
     xlab = "Distance from plate boundary",
-    ylab = expression("Azimuth wrt. PoR" ~ alpha ~ "(" * degree * ")"),
+    ylab = expression("Azimuth wrt. PoR " ~ alpha ~ "(" * degree * ")"),
     sub = subtitle,
     main = "Distance from plate boundary vs. azimuth",
     xlim = range(distance),
@@ -869,9 +1198,9 @@ quick_plot <- function(
 #' moving plate boundaries, respectively. If \code{"none"} (the default), only
 #' the PoR-equivalent azimuth is returned.
 #'
-#' @param deviation logical.
+#' @param show.deviation logical.
 #' Whether the data should be color-coded according to the deviation from the
-#' prediction, or according to the stress regime?
+#' prediction, or according to the stress regime? Is ignored if `type=='none'`.
 #' @param ... optional arguments passed to [tectonicr.colors()]
 #'
 #' @returns plot
@@ -890,9 +1219,9 @@ quick_plot <- function(
 #' plate_boundary <- subset(plates, plates$pair == "na-pa")
 #'
 #' data("san_andreas")
-#' PoR_map(san_andreas, PoR = na_pa, pb = plate_boundary, type = "right", deviation = TRUE)
+#' PoR_map(san_andreas, PoR = na_pa, pb = plate_boundary, type = "right", show.deviation = TRUE)
 PoR_map <- function(x, PoR, pb = NULL, type = c("none", "in", "out", "right", "left"),
-                    deviation = FALSE, ...) {
+                    show.deviation = FALSE, ...) {
   val <- val2 <- character()
   type <- match.arg(type)
   x_por_df <- PoR_shmax(x, PoR, type = type)
@@ -906,9 +1235,9 @@ PoR_map <- function(x, PoR, pb = NULL, type = c("none", "in", "out", "right", "l
 
   pb_por <- geographical_to_PoR_sf(pb, PoR)
 
-  if (deviation & type != "none") {
+  if (show.deviation & type != "none") {
     cols <- tectonicr.colors(abs(x_por_df$cdist), categorical = FALSE, ...)
-    legend.title <- "|Circular distance|"
+    legend.title <- "Circular distance"
   } else {
     cols <- tectonicr.colors(
       x$regime,

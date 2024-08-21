@@ -94,6 +94,7 @@ norm_chisq <- function(obs, prd, unc) {
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
 #' @param mu (optional) The specified or known mean direction (in degrees) in
 #' alternative hypothesis
+#' @param quiet logical. Prints the test's decision.
 #'
 #' @details \describe{
 #' \item{\eqn{H_0}{H0}:}{angles are randomly distributed around the circle.}
@@ -115,9 +116,12 @@ norm_chisq <- function(obs, prd, unc) {
 #'
 #' @returns a list with the components:
 #' \describe{
-#'  \item{`statistic`}{mean resultant length}
+#'  \item{`R` or `C`}{mean resultant length or the dispersion (if `mu` is
+#'  specified). Small values of `R` (large values of `C`) will reject
+#'  uniformity. Negative values of `C` indicate that vectors point in opposite
+#'  directions (also lead to rejection).}
+#'  \item{`statistic`}{test statistic}
 #'  \item{`p.value`}{significance level of the test statistic}
-#'  \item{`p.value2`}{modified significance level (Cordeiro and Ferrari, 1991)}
 #' }
 #'
 #' @references
@@ -130,7 +134,7 @@ norm_chisq <- function(obs, prd, unc) {
 #' Sections 3.3.3 and 3.4.1, World Scientific Press, Singapore.
 #'
 #' @seealso [mean_resultant_length()], [circular_mean()], [norm_chisq()],
-#' [kuiper_test()], [watson_test()]
+#' [kuiper_test()], [watson_test()], [weighted_rayleigh()]
 #'
 #' @export
 #'
@@ -163,12 +167,8 @@ norm_chisq <- function(obs, prd, unc) {
 #' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' rayleigh_test(sa.por$azi.PoR, mu = 135)
-rayleigh_test <- function(x, mu = NULL, axial = TRUE) {
-  f <- if (axial) {
-    2
-  } else {
-    1
-  }
+rayleigh_test <- function(x, mu = NULL, axial = TRUE, quiet = FALSE) {
+  f <- as.numeric(axial) + 1
 
   if (is.null(mu)) {
     x <- (na.omit(x) * f) %% 360
@@ -176,23 +176,26 @@ rayleigh_test <- function(x, mu = NULL, axial = TRUE) {
 
     R <- mean_resultant_length(x, na.rm = FALSE)
     S <- 2 * n * R^2
-    S2 <- (1 - 1 / (2 * n)) * S + (n * R^4) / 2
+    # S2 <- (1 - 1 / (2 * n)) * S + (n * R^4) / 2
     # if(n <= 10){
     #  p.value <- p_value3(R, n)
     # } else  {
     p.value <- rayleigh_p_value1(S / 2, n)
     # }
-    p.value2 <- rayleigh_p_value1(S2 / 2, n)
+    # p.value2 <- rayleigh_p_value1(S2 / 2, n)
 
     result <- list(
-      statistic = R,
-      p.value = p.value,
-      p.value2 = p.value2
+      R = R,
+      statistic = S / 2,
+      p.value = p.value
+      # p.value2 = p.value2
     )
-    if (R > p.value2) {
-      message("Reject Null Hypothesis\n")
-    } else {
-      message("Do Not Reject Null Hypothesis\n")
+    if (!quiet) {
+      if (S / 2 >= p.value) {
+        message("Reject Null Hypothesis\n")
+      } else {
+        message("Do Not Reject Null Hypothesis\n")
+      }
     }
   } else {
     data <- cbind(x = x, mu = mu)
@@ -207,39 +210,42 @@ rayleigh_test <- function(x, mu = NULL, axial = TRUE) {
     p.value <- rayleigh_p_value2(s, n)
 
     result <- list(
-      statistic = C,
+      C = C,
+      statistic = s,
       p.value = p.value
     )
-    if (C > p.value) {
-      message("Reject Null Hypothesis\n")
-    } else {
-      message("Do Not Reject Null Hypothesis\n")
+    if (!quiet) {
+      if (s >= p.value) {
+        message("Reject Null Hypothesis\n")
+      } else {
+        message("Do Not Reject Null Hypothesis\n")
+      }
     }
   }
 
   return(result)
 }
 
-rayleigh_p_value1 <- function(K, n) {
-  # Pearson. 1906; Greenwood and Durand, 1955
-  P <- exp(-K)
-  if (n < 50) {
-    temp <- 1 +
-      (2 * K - K^2) / (4 * n) -
-      (24 * K - 132 * K^2 + 76 * K^3 - 9 * K^4) / (288 * n^2)
+rayleigh_p_value1 <- function(K, n, wilkie = FALSE) {
+  if (!wilkie) {
+    # Pearson. 1906; Greenwood and Durand, 1955
+    P <- exp(-K)
+    if (n < 50) {
+      temp <- 1 +
+        (2 * K - K^2) / (4 * n) -
+        (24 * K - 132 * K^2 + 76 * K^3 - 9 * K^4) / (288 * n^2)
+    } else {
+      temp <- 1
+    }
+    P * temp
+    min(max(P * temp, 0), 1)
   } else {
-    temp <- 1
+    # Wilkie 1983
+    Rn <- K * n
+    temp <- sqrt(1 + 4 * n + 4 * (n^2 - Rn^2)) - (1 + 2 * n)
+    round(exp(temp), 3)
   }
-  P * temp
-  min(max(P * temp, 0), 1)
 }
-
-# rayleigh_p_value3 <- function(R, n) {
-#   # Wilkie 1983
-#   Rn <- R * n
-#   temp <- sqrt(1 + 4 * n + 4 * (n^2 - Rn^2)) - (1 + 2 * n)
-#   round(exp(temp), 3)
-# }
 
 rayleigh_p_value2 <- function(K, n) {
   # Greenwood and Durand, 1957
@@ -263,15 +269,20 @@ rayleigh_p_value2 <- function(K, n) {
 #' hypothesis.
 #' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
+#' @param quiet logical. Prints the test's decision.
 #'
 #' @details
 #' The Null hypothesis is uniformity (randomness). The alternative is a
-#' distribution with a specified mean direction (`prd`).
-#' If `statistic > p.value`, the null hypothesis is rejected.
-#' If not, the alternative cannot be excluded.
+#' distribution with a (specified) mean direction (`mu`).
+#' If `statistic >= p.value`, the null hypothesis of randomness is rejected and
+#' angles derive from a distribution with a (or the specified) mean direction.
 #'
 #' @returns a list with the components:
 #' \describe{
+#'  \item{`R` or `C`}{mean resultant length or the dispersion (if `mu` is
+#'  specified). Small values of `R` (large values of `C`) will reject
+#'  uniformity. Negative values of `C` indicate that vectors point in opposite
+#'  directions (also lead to rejection).}
 #'  \item{`statistic`}{Test statistic}
 #'  \item{`p.value`}{significance level of the test statistic}
 #' }
@@ -297,13 +308,12 @@ rayleigh_p_value2 <- function(K, n) {
 #' weighted_rayleigh(tibet.por$azi.PoR, mu = 90, w = 1 / tibet$unc)
 #' weighted_rayleigh(ice.por$azi.PoR, mu = 0, w = 1 / iceland$unc)
 #' weighted_rayleigh(sa.por$azi.PoR, mu = 135, w = 1 / san_andreas$unc)
-weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE) {
+weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE, quiet = FALSE) {
   if (is.null(w)) {
     rayleigh_test(x, mu = mu, axial = axial)
   } else {
     data <- cbind(x = x, w = w)
     data <- data[stats::complete.cases(data), ] # remove NA values
-
 
     w <- data[, "w"]
     Z <- sum(w)
@@ -314,30 +324,24 @@ weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE) {
     }
 
     d <- data[, "x"] - mu
-    f <- ifelse(axial, 2, 1)
-    cosd <- cosd(f * d) / f
-    #wcosd <- w * cosd
+    f <- as.numeric(axial) + 1
 
-    md <- 1
-    # if(norm){
-    #   md <- 2
-    # }
-    #wmd <- md * w # = w * (1 - cos(pi)) = w * (1 - (-1))
-
-    C <- sum(w * cosd) / (Z * md)
-
-    s <- sqrt(2 * Z * md) * C
-    p.value <- rayleigh_p_value2(s, Z*md)
+    m <- mean_SC(f * d, w = w, na.rm = FALSE)
+    C <- as.numeric(m["C"])
+    s <- sqrt(2 * n) * C
+    p.value <- rayleigh_p_value2(s, n)
 
     result <- list(
-      statistic = C,
-      # Csq = (sum(wcosd^2) / sum(wmd^2)),
+      C = C,
+      statistic = s,
       p.value = p.value
     )
-    if (C > p.value) {
-      message("Reject Null Hypothesis\n")
-    } else {
-      message("Do Not Reject Null Hypothesis\n")
+    if (!quiet) {
+      if (s >= p.value) {
+        message("Reject Null Hypothesis\n")
+      } else {
+        message("Do Not Reject Null Hypothesis\n")
+      }
     }
     return(result)
   }
@@ -356,6 +360,7 @@ weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE) {
 #' (`TRUE`, the default) or circular, i.e. \eqn{2 \pi}-periodical (`FALSE`).
 #' @returns list containing the test statistic `statistic` and the significance
 #' level `p.value`.
+#' @param quiet logical. Prints the test's decision.
 #'
 #' @details
 #'
@@ -375,7 +380,7 @@ weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE) {
 #' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' kuiper_test(sa.por$azi.PoR, alpha = .05)
-kuiper_test <- function(x, alpha = 0, axial = TRUE) {
+kuiper_test <- function(x, alpha = 0, axial = TRUE, quiet = FALSE) {
   if (!any(c(0, 0.01, 0.025, 0.05, 0.1, 0.15) == alpha)) {
     stop("'alpha' must be one of the following values: 0, 0.01, 0.025, 0.05, 0.1, 0.15")
   }
@@ -383,7 +388,7 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
     c(0.15, 0.1, 0.05, 0.025, 0.01),
     c(1.537, 1.62, 1.747, 1.862, 2.001)
   )
-  f <- ifelse(axial, 2, 1)
+  f <- as.numeric(axial) + 1
 
   x <- (na.omit(x) * f) %% 360
   u <- sort(deg2rad(x) %% (2 * pi)) / (2 * pi)
@@ -411,11 +416,12 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
     }
   } else {
     p.value <- kuiper.crits[(1:5)[alpha == c(kuiper.crits[, 1])], 2]
-
-    if (V > p.value) {
-      message("Reject Null Hypothesis\n")
-    } else {
-      message("Do Not Reject Null Hypothesis\n")
+    if (!quiet) {
+      if (V > p.value) {
+        message("Reject Null Hypothesis\n")
+      } else {
+        message("Do Not Reject Null Hypothesis\n")
+      }
     }
   }
   return(
@@ -441,6 +447,7 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
 #'  hypothesis
 #' @param dist Distribution to test for. The default, `"uniform"`, is the
 #' uniform distribution. `"vonmises"` tests the von Mises distribution.
+#' @param quiet logical. Prints the test's decision.
 #'
 #' @returns list containing the test statistic `statistic` and the significance
 #' level `p.value`.
@@ -466,7 +473,7 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE) {
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' watson_test(sa.por$azi.PoR, alpha = .05)
 #' watson_test(sa.por$azi.PoR, alpha = .05, dist = "vonmises")
-watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = TRUE, mu = NULL) {
+watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = TRUE, mu = NULL, quiet = FALSE) {
   if (!any(c(0, 0.01, 0.025, 0.05, 0.1) == alpha)) {
     stop("'alpha' must be one of the following values: 0, 0.01, 0.025, 0.05, 0.1")
   }
@@ -516,11 +523,12 @@ watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = T
     } else {
       index <- (1:5)[alpha == c(0, 0.01, 0.025, 0.05, 0.1)]
       p.value <- crits[index]
-
-      if (statistic > p.value) {
-        message("Reject Null Hypothesis\n")
-      } else {
-        message("Do Not Reject Null Hypothesis\n")
+      if (!quiet) {
+        if (statistic > p.value) {
+          message("Reject Null Hypothesis\n")
+        } else {
+          message("Do Not Reject Null Hypothesis\n")
+        }
       }
     }
   } else {
@@ -571,10 +579,12 @@ watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = T
         stop("Invalid input for alpha", "\n", "\n")
       }
       p.value <- u2.crits[row, col]
-      if (statistic > p.value) {
-        message("Reject Null Hypothesis\n")
-      } else {
-        message("Do Not Reject Null Hypothesis\n")
+      if (!quiet) {
+        if (statistic > p.value) {
+          message("Reject Null Hypothesis\n")
+        } else {
+          message("Do Not Reject Null Hypothesis\n")
+        }
       }
     } else {
       if (statistic < u2.crits[row, 2]) {
@@ -596,75 +606,88 @@ watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = T
 
 
 # Distribution ####
-pvm.mu0 <- function(theta, kappa, acc) {
-  flag <- TRUE
-  p <- 1
-  sum <- 0
-  while (flag) {
-    term <- (besselI(x = kappa, nu = p, expon.scaled = FALSE) *
-      sin(p * theta)) / p
-    sum <- sum + term
-    p <- p + 1
-    if (abs(term) < acc) {
-      flag <- FALSE
-    }
-  }
-  theta / (2 * pi) + sum / (pi * besselI(
-    x = kappa, nu = 0,
-    expon.scaled = FALSE
-  ))
-}
+# pvm.mu0 <- function(theta, kappa, acc) {
+#   flag <- TRUE
+#   p <- 1
+#   sum <- 0
+#   while (flag) {
+#     term <- (besselI(x = kappa, nu = p, expon.scaled = FALSE) *
+#       sin(p * theta)) / p
+#     sum <- sum + term
+#     p <- p + 1
+#     if (abs(term) < acc) {
+#       flag <- FALSE
+#     }
+#   }
+#   theta / (2 * pi) + sum / (pi * besselI(
+#     x = kappa, nu = 0,
+#     expon.scaled = FALSE
+#   ))
+# }
 
 
 
 #' The von Mises Distribution
 #'
-#' Density, distribution function, and random generation for the circular normal
-#' distribution with mean and kappa.
+#' Density, probability distribution function, quantiles, and random generation
+#' for the circular normal distribution with mean and kappa.
 #'
 #' @param n number of observations in degrees
+#' @param p numeric vector of probabilities with values in \eqn{[0,1]}{[0,1]}.
 #' @param mean mean in degrees
 #' @param kappa concentration parameter
 #' @param theta angular value in degrees
+#' @param from if `NULL` is set to \eqn{\mu-\pi}{mu-pi}. This is the value from
+#' which the pvm and qvm are evaluated. in degrees.
+#' @param tol the precision in evaluating the distribution function or the quantile.
 #'
-#' @returns numeric vector.
+#' @returns `dvm` gives the density,
+#' `pvm` gives the probability of the von Mises distribution function,
+#' `rvm` generates random deviates (in degrees), and
+#' `qvm` provides quantiles (in degrees).
 #'
 #' @name vonmises
 #'
+#' @importFrom circular circular rvonmises pvonmises qvonmises
+#'
 #' @examples
-#' x <- rvm(100, mean = 90, k = 100)
-#' dvm(x, mean = 90, k = 100)
+#' x <- rvm(100, mean = 90, kappa = 2)
+#' dvm(x, mean = 90, kappa = 2)
+#' pvm(x, mean = 90, kappa = 2)
+#' qvm(c(.25, .5, .75), mean = 90, kappa = 2)
 NULL
 
 #' @rdname vonmises
 #' @export
 rvm <- function(n, mean, kappa) {
-  vm <- c(1:n)
-  a <- 1 + (1 + 4 * (kappa^2))^0.5
-  b <- (a - (2 * a)^0.5) / (2 * kappa)
-  r <- (1 + b^2) / (2 * b)
-  obs <- 1
-  while (obs <= n) {
-    U1 <- runif(1, 0, 1)
-    z <- cos(pi * U1)
-    f <- (1 + r * z) / (r + z)
-    c <- kappa * (r - f)
-    U2 <- runif(1, 0, 1)
-    if (c * (2 - c) - U2 > 0) {
-      U3 <- runif(1, 0, 1)
-      vm[obs] <- sign(U3 - 0.5) * acos(f) + deg2rad(mean)
-      vm[obs] <- vm[obs] %% (2 * pi)
-      obs <- obs + 1
-    } else {
-      if (log(c / U2) + 1 - c >= 0) {
-        U3 <- runif(1, 0, 1)
-        vm[obs] <- sign(U3 - 0.5) * acos(f) + deg2rad(mean)
-        vm[obs] <- vm[obs] %% (2 * pi)
-        obs <- obs + 1
-      }
-    }
-  }
-  rad2deg(vm)
+  # vm <- c(1:n)
+  # a <- 1 + (1 + 4 * (kappa^2))^0.5
+  # b <- (a - (2 * a)^0.5) / (2 * kappa)
+  # r <- (1 + b^2) / (2 * b)
+  # obs <- 1
+  # while (obs <= n) {
+  #   U1 <- runif(1, 0, 1)
+  #   z <- cos(pi * U1)
+  #   f <- (1 + r * z) / (r + z)
+  #   c <- kappa * (r - f)
+  #   U2 <- runif(1, 0, 1)
+  #   if (c * (2 - c) - U2 > 0) {
+  #     U3 <- runif(1, 0, 1)
+  #     vm[obs] <- sign(U3 - 0.5) * acos(f) + deg2rad(mean)
+  #     vm[obs] <- vm[obs] %% (2 * pi)
+  #     obs <- obs + 1
+  #   } else {
+  #     if (log(c / U2) + 1 - c >= 0) {
+  #       U3 <- runif(1, 0, 1)
+  #       vm[obs] <- sign(U3 - 0.5) * acos(f) + deg2rad(mean)
+  #       vm[obs] <- vm[obs] %% (2 * pi)
+  #       obs <- obs + 1
+  #     }
+  #   }
+  # }
+  # rad2deg(vm)
+  mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
+  circular::rvonmises(n, mu, kappa) |> as.numeric()
 }
 
 #' @rdname vonmises
@@ -676,33 +699,55 @@ dvm <- function(theta, mean, kappa) {
 
 #' @rdname vonmises
 #' @export
-pvm <- function(theta, mean, kappa) {
-  acc <- 1e-20
-  theta <- deg2rad(theta) %% (2 * pi)
-  mu <- deg2rad(mean) %% (2 * pi)
+pvm <- function(theta, mean, kappa, from = NULL, tol = 1e-20) {
+  theta <- circular::circular(theta, units = "degrees", modulo = "2pi")
+  mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
 
-  if (mu == 0) {
-    pvm.mu0(theta, kappa, acc)
-  } else {
-    if (theta <= mu) {
-      upper <- (theta - mu) %% (2 * pi)
-      if (upper == 0) {
-        upper <- 2 * pi
-      }
-      lower <- (-mu) %% (2 * pi)
-      pvm.mu0(upper, kappa, acc) - pvm.mu0(lower, kappa, acc)
-    } else {
-      upper <- theta - mu
-      lower <- mu %% (2 * pi)
-      pvm.mu0(upper, kappa, acc) + pvm.mu0(lower, kappa, acc)
-    }
+  if (!is.null(from)) {
+    from <- circular::circular(from, units = "degrees", modulo = "2pi")
   }
+
+  circular::pvonmises(theta, mu, kappa, from = NULL, tol = tol)
+
+  # if (mu == 0) {
+  #   pvm.mu0(theta, kappa, tol)
+  # } else {
+  #   if (theta <= mu) {
+  #     upper <- (theta - mu) %% (2 * pi)
+  #     if (upper == 0) {
+  #       upper <- 2 * pi
+  #     }
+  #     lower <- (-mu) %% (2 * pi)
+  #     pvm.mu0(upper, kappa, tol) - pvm.mu0(lower, kappa, tol)
+  #   } else {
+  #     upper <- theta - mu
+  #     lower <- mu %% (2 * pi)
+  #     pvm.mu0(upper, kappa, tol) + pvm.mu0(lower, kappa, tol)
+  #   }
+  # }
 }
 
+#' @rdname vonmises
+#' @export
+qvm <- function(p, mean = 0, kappa, from = NULL, tol = .Machine$double.eps^(0.6)) {
+  mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
+
+  if (!is.null(from)) {
+    from <- circular::circular(from, units = "degrees", modulo = "2pi")
+  }
+
+  circular::qvonmises(p, mu, kappa, from, tol = tol) |> as.numeric()
+}
+
+
 A1inv <- function(x) {
-  ifelse(0 <= x & x < 0.53, 2 * x + x^3 + (5 * x^5) / 6,
-    ifelse(x < 0.85, -0.4 + 1.39 * x + 0.43 / (1 - x), 1 / (x^3 - 4 * x^2 + 3 * x))
-  )
+  if (0 <= x & x < 0.53) {
+    2 * x + x^3 + (5 * x^5) / 6
+  } else if (x < 0.85) {
+    -0.4 + 1.39 * x + 0.43 / (1 - x)
+  } else {
+    1 / (x^3 - 4 * x^2 + 3 * x)
+  }
 }
 
 #' Concentration parameter of von Mises distribution

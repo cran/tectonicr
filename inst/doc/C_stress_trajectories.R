@@ -4,7 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----setup, echo=TRUE---------------------------------------------------------
+## ----setup, echo=TRUE,message=FALSE-------------------------------------------
 library(tectonicr)
 library(ggplot2) # load ggplot library
 library(sf)

@@ -4,7 +4,7 @@
 \alias{rayleigh_test}
 \title{Rayleigh Test of Circular Uniformity}
 \usage{
-rayleigh_test(x, mu = NULL, axial = TRUE)
+rayleigh_test(x, mu = NULL, axial = TRUE, quiet = FALSE)
 }
 \arguments{
 \item{x}{numeric vector. Values in degrees}
@@ -14,13 +14,18 @@ alternative hypothesis}
 
 \item{axial}{logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
 (\code{TRUE}, the default) or directional, i.e. \eqn{2 \pi}-periodical (\code{FALSE}).}
+
+\item{quiet}{logical. Prints the test's decision.}
 }
 \value{
 a list with the components:
 \describe{
-\item{\code{statistic}}{mean resultant length}
+\item{\code{R} or \code{C}}{mean resultant length or the dispersion (if \code{mu} is
+specified). Small values of \code{R} (large values of \code{C}) will reject
+uniformity. Negative values of \code{C} indicate that vectors point in opposite
+directions (also lead to rejection).}
+\item{\code{statistic}}{test statistic}
 \item{\code{p.value}}{significance level of the test statistic}
-\item{\code{p.value2}}{modified significance level (Cordeiro and Ferrari, 1991)}
 }
 }
 \description{
@@ -88,5 +93,5 @@ Sections 3.3.3 and 3.4.1, World Scientific Press, Singapore.
 }
 \seealso{
 \code{\link[=mean_resultant_length]{mean_resultant_length()}}, \code{\link[=circular_mean]{circular_mean()}}, \code{\link[=norm_chisq]{norm_chisq()}},
-\code{\link[=kuiper_test]{kuiper_test()}}, \code{\link[=watson_test]{watson_test()}}
+\code{\link[=kuiper_test]{kuiper_test()}}, \code{\link[=watson_test]{watson_test()}}, \code{\link[=weighted_rayleigh]{weighted_rayleigh()}}
 }

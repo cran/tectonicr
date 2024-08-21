@@ -12,7 +12,7 @@
 
 <meta name="author" content="Tobias Stephan" />
 
-<meta name="date" content="2024-05-27" />
+<meta name="date" content="2024-08-21" />
 
 <title>4. Circular statistics</title>
 
@@ -62,7 +62,7 @@ div.sourceCode { overflow: auto; }
 }
 @media print {
 pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
 }
 pre.numberSource code
 { counter-reset: source-line 0; }
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">4. Circular statistics</h1>
 <h4 class="author">Tobias Stephan</h4>
-<h4 class="date">2024-05-27</h4>
+<h4 class="date">2024-08-21</h4>
 
 
 
@@ -357,9 +357,9 @@ quasi-median (<code>circular_median()</code>) as metrics to describe
 average direction:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;san_andreas&quot;</span>)</span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas<span class="sc">$</span>azi)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [1] 10.66733</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; [1] 5.900587</span></span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas<span class="sc">$</span>azi)</span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] 36</span></span></code></pre></div>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] 54</span></span></code></pre></div>
 </div>
 <div id="quality-weighted-mean-direction" class="section level2">
 <h2>Quality weighted mean direction</h2>
@@ -368,17 +368,16 @@ precise direction should have less impact on the final mean direction
 The weighted mean or quasi-median uses the reported measurements
 weighted by the inverse of the uncertainties:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas<span class="sc">$</span>azi, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; [1] 9.973671</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co">#&gt; [1] 9.961752</span></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas<span class="sc">$</span>azi, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt;  A </span></span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; 36</span></span></code></pre></div>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; [1] 54</span></span></code></pre></div>
 <p>The spread of directional data can be expressed by the standard
 deviation (for the mean) or the quasi-interquartile range (for the
 median):</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">circular_sd</span>(san_andreas<span class="sc">$</span>azi, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc) <span class="co"># standard deviation</span></span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; [1] 38.44193</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; [1] 23.53222</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">circular_IQR</span>(san_andreas<span class="sc">$</span>azi, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc) <span class="co"># interquartile range</span></span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1] 33.10713</span></span></code></pre></div>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1] 27</span></span></code></pre></div>
 </div>
 <div id="statistics-in-the-pole-of-rotation-por-reference-frame" class="section level2">
 <h2>Statistics in the Pole of Rotation (PoR) reference frame</h2>
@@ -391,25 +390,53 @@ orientations of the PoR reference frame.</p>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="fu">equivalent_rotation</span>(<span class="st">&quot;na&quot;</span>, <span class="st">&quot;pa&quot;</span>)</span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>san_andreas.por <span class="ot">&lt;-</span> <span class="fu">PoR_shmax</span>(san_andreas, por, <span class="at">type =</span> <span class="st">&quot;right&quot;</span>)</span></code></pre></div>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] 137.9887</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] 140.9378</span></span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">circular_sd</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] 37.30543</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] 20.70855</span></span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt;        A </span></span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; 135.6592</span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">circular_IQR</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; [1] 25.82388</span></span></code></pre></div>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; [1] 134.3514</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">circular_IQR</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; [1] 22.1692</span></span></code></pre></div>
+<p>The collected summary statistics can be quickly obtained by
+<code>circular_summary()</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">circular_summary</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt;            n         mean           sd          var          25% quasi-median </span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt;  407.0000000  140.9378309   20.7085472    0.2299245  124.4211789  134.3513545 </span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;          75%       median        95%CI     skewness     kurtosis            R </span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  146.5903801  135.2559405    3.8666117   -0.4975826    1.1926891    0.7782013</span></span></code></pre></div>
+<p>The summary statistics include also the circular variance, skewness,
+kurtosis, and the 95% confidence angle.</p>
 </div>
 <div id="rose-diagram" class="section level2">
 <h2>Rose diagram</h2>
 <p><strong>tectonicr</strong> provides a rose diagram, i.e. histogram
 for angular data.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">rose</span>(san_andreas<span class="sc">$</span>azi, <span class="at">weights =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">col =</span> <span class="st">&quot;grey&quot;</span>, <span class="at">main =</span> <span class="st">&quot;North pole&quot;</span>)</span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">rose</span>(san_andreas.por<span class="sc">$</span>azi, <span class="at">weights =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">col =</span> <span class="st">&quot;grey&quot;</span>, <span class="at">main =</span> <span class="st">&quot;PoR&quot;</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">rose_line</span>(<span class="dv">135</span>, <span class="at">radius =</span> <span class="fl">1.1</span>, <span class="at">col =</span> <span class="st">&quot;#009E73&quot;</span>) <span class="co"># show the predicted direction</span></span></code></pre></div>
-<p><img src="data:image/png;base64,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" /><!-- --></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">rose</span>(san_andreas<span class="sc">$</span>azi,</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  <span class="at">weights =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">main =</span> <span class="st">&quot;North pole&quot;</span>,</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">dots =</span> <span class="cn">TRUE</span>, <span class="at">stack =</span> <span class="cn">TRUE</span>, <span class="at">dot_cex =</span> <span class="fl">0.5</span>, <span class="at">dot_pch =</span> <span class="dv">21</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co"># add the density curve</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="fu">plot_density</span>(san_andreas<span class="sc">$</span>azi, <span class="at">kappa =</span> <span class="dv">10</span>, <span class="at">col =</span> <span class="st">&quot;dodgerblue&quot;</span>, <span class="at">shrink =</span> <span class="fl">1.5</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>The diagram shows the uncertainty-weighted frequencies (equal area
+rose fans), the von Mises density distribution (blue curve), and the
+circular mean (red line) incl. its 95% confidence interval (transparent
+red).</p>
+<p>Showing the distribution of the transformed data gives the better
+representation of the angle distribution as there is no angle distortion
+due to the arbitrarily chosen geographic coordinate system.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">rose</span>(san_andreas.por<span class="sc">$</span>azi,</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>  <span class="at">weights =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">main =</span> <span class="st">&quot;PoR&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="at">dots =</span> <span class="cn">TRUE</span>, <span class="at">stack =</span> <span class="cn">TRUE</span>, <span class="at">dot_cex =</span> <span class="fl">0.5</span>, <span class="at">dot_pch =</span> <span class="dv">21</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>)</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="fu">plot_density</span>(san_andreas.por<span class="sc">$</span>azi, <span class="at">kappa =</span> <span class="dv">10</span>, <span class="at">col =</span> <span class="st">&quot;dodgerblue&quot;</span>, <span class="at">shrink =</span> <span class="fl">1.5</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co"># show the predicted direction</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="fu">rose_line</span>(<span class="dv">135</span>, <span class="at">radius =</span> <span class="fl">1.1</span>, <span class="at">col =</span> <span class="st">&quot;#009E73&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>The green line shows the predicted direction.</p>
 </div>
 <div id="statistical-tests" class="section level2">
 <h2>Statistical tests</h2>
@@ -419,16 +446,16 @@ for angular data.</p>
 Mises distribution</em> (Mardia and Jupp, 1999). If the directions are
 distributed randomly can be tested with the <strong>Rayleigh
 Test</strong>:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">rayleigh_test</span>(san_andreas.por<span class="sc">$</span>azi.PoR)</span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; Reject Null Hypothesis</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.7165212</span></span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt; [1] 5.606831e-242</span></span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; $p.value2</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; [1] 7.860367e-273</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">rayleigh_test</span>(san_andreas.por<span class="sc">$</span>azi.PoR)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; Reject Null Hypothesis</span></span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; $R</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.7782013</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [1] 246.4781</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; [1] 9.034746e-108</span></span></code></pre></div>
 <p>Here, the test rejects the Null Hypothesis
 (<code>statistic &gt; p.value</code>). Thus the <span class="math inline">\(\sigma_{SHmax}\)</span> directions have a
 preferred orientation.</p>
@@ -443,15 +470,15 @@ preferred orientation.</p>
 the orientation data, a <span class="math inline">\((1-\alpha
 \%)/100\)</span> <strong>confidence interval</strong> can be calculated
 (Mardia and Jupp, 1999):</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">confidence_interval</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; $mu</span></span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a><span class="co">#&gt; [1] 137.9887</span></span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt; $conf.angle</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt; [1] 4.940342</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; $conf.interval</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; [1] 133.0484 142.9291</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">confidence_interval</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; $mu</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; [1] 140.9378</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt; $conf.angle</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt; [1] 1.461317</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; $conf.interval</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; [1] 139.4765 142.3991</span></span></code></pre></div>
 <p>The prediction for the <span class="math inline">\(\sigma_{SHmax}\)</span> orientation is <span class="math inline">\(135^{\circ}\)</span>. Since the prediction lies
 within the confidence interval, it can be concluded with 95% confidence
 that the orientations follow the predicted trend of <span class="math inline">\(\sigma_{SHmax}\)</span>.</p>
@@ -459,30 +486,33 @@ that the orientations follow the predicted trend of <span class="math inline">\(
 orientation angles around the prediction is another way of assessing the
 significance of a normal distribution around a specified direction. It
 can be measured by:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">circular_dispersion</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.0977037</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">circular_dispersion</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.1232034</span></span></code></pre></div>
 <p>The value of the dispersion ranges between 0 and 2.</p>
 <p>The standard error and the confidence interval of the calculated
 circular dispersion can be estimated by bootstrapping via:</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">circular_dispersion_boot</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">R =</span> <span class="dv">1000</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co">#&gt; $MLE</span></span>
-<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.1904192</span></span>
-<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt; $sde</span></span>
-<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.009598388</span></span>
-<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; $CI</span></span>
-<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.1710813 0.2092438</span></span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">circular_dispersion_boot</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">R =</span> <span class="dv">1000</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; $MLE</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.2281785</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; $sde</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.02096251</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; $CI</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.1885083 0.2688265</span></span></code></pre></div>
 <p>The statistical test for the goodness-of-fit is the (weighted)
 <strong>Rayleigh Test</strong> with a specified mean direction (here the
 predicted direction of <span class="math inline">\(135^{\circ}\)</span>:</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">weighted_rayleigh</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">mu =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
-<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; Reject Null Hypothesis</span></span>
-<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
-<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.4022963</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
-<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] 3.552781e-14</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">weighted_rayleigh</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">mu =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; Reject Null Hypothesis</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; $C</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.7535932</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; [1] 21.50053</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a><span class="co">#&gt; [1] 3.777096e-100</span></span></code></pre></div>
 <p>Here, the Null Hypothesis is rejected, and thus, the alternative,
 that is a uniform distribution around the predicted direction, cannot be
 excluded.</p>

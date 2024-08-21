@@ -4,7 +4,7 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----setup, echo=TRUE---------------------------------------------------------
+## ----setup, echo=TRUE, message=FALSE------------------------------------------
 library(tectonicr)
 library(ggplot2) # load ggplot library
 
@@ -34,12 +34,27 @@ circular_sd(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 circular_median(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 circular_IQR(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 
+## ----summary_stats, echo=TRUE-------------------------------------------------
+circular_summary(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
+
 ## ----rose1, echo=TRUE---------------------------------------------------------
-rose(san_andreas$azi, weights = 1 / san_andreas$unc, col = "grey", main = "North pole")
+rose(san_andreas$azi,
+  weights = 1 / san_andreas$unc, main = "North pole",
+  dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21
+)
+
+# add the density curve
+plot_density(san_andreas$azi, kappa = 10, col = "dodgerblue", shrink = 1.5)
 
 ## ----rose2, echo=TRUE---------------------------------------------------------
-rose(san_andreas.por$azi, weights = 1 / san_andreas$unc, col = "grey", main = "PoR")
-rose_line(135, radius = 1.1, col = "#009E73") # show the predicted direction
+rose(san_andreas.por$azi,
+  weights = 1 / san_andreas$unc, main = "PoR",
+  dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21
+)
+plot_density(san_andreas.por$azi, kappa = 10, col = "dodgerblue", shrink = 1.5)
+
+# show the predicted direction
+rose_line(135, radius = 1.1, col = "#009E73")
 
 ## ----random, echo=TRUE--------------------------------------------------------
 rayleigh_test(san_andreas.por$azi.PoR)

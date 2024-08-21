@@ -11,18 +11,22 @@ rose(
   bins = NULL,
   axial = TRUE,
   equal_area = TRUE,
-  clockwise = TRUE,
   muci = TRUE,
   round_binwidth = 0,
   mtext = "N",
   main = NULL,
   sub = NULL,
   at = seq(0, 360 - 45, 45),
+  cborder = TRUE,
+  labels = TRUE,
   col = "grey",
   dots = FALSE,
   dot_pch = 1,
   dot_cex = 1,
-  dot_col = "grey",
+  dot_col = "slategrey",
+  stack = FALSE,
+  jitter_factor = 0,
+  add = FALSE,
   ...
 )
 }
@@ -43,10 +47,6 @@ or biaxial (\code{TRUE}, the default).}
 the frequencies (\code{equal_area=FALSE}, i.e. equal-angle) or proportional to the
 square-root of the frequencies (\code{equal_area=TRUE}, the default).}
 
-\item{clockwise}{Logical. Whether angles increase in the
-clockwise direction (\code{clockwise=TRUE}, the default) or anti-clockwise,
-counter-clockwise direction (\code{FALSE}).}
-
 \item{muci}{logical. Whether the mean and its 95\% CI are added to the plot
 or not.}
 
@@ -62,6 +62,11 @@ plot. If \code{sub = NULL}, it will show the bin width.}
 \item{at}{Optional vector of angles at which tick marks should be plotted.
 Set \code{at=numeric(0)} to suppress tick marks.}
 
+\item{cborder}{logical. Border of rose plot.}
+
+\item{labels}{Either a logical value indicating whether to plot labels
+next to the tick marks, or a vector of labels for the tick marks.}
+
 \item{col}{fill color of bins}
 
 \item{dots}{logical. Whether a circular dot plot should be added
@@ -69,10 +74,20 @@ Set \code{at=numeric(0)} to suppress tick marks.}
 
 \item{dot_cex, dot_pch, dot_col}{Plotting arguments for circular dot plot}
 
+\item{stack}{logical. Groups and stacks the dots if \code{TRUE}. Default is \code{FALSE}.}
+
+\item{jitter_factor}{Add a small amount of noise to the angles' radius that
+is added to \code{scale}. Jitter is ignored when \code{stack==TRUE}).
+If \code{0}, no jitter is added (by default); if negative, the points fall into
+the circle.}
+
+\item{add}{logical.}
+
 \item{...}{Additional arguments passed to \code{\link[spatstat.explore:rose]{spatstat.explore::rose()}}.}
 }
 \value{
-A window (class \code{"owin"}) containing the plotted region.
+A window (class \code{"owin"}) containing the plotted region or a \code{list}
+of the calculated frequencies.
 }
 \description{
 Plots a rose diagram (rose of directions), the analogue of a
@@ -92,7 +107,17 @@ If \code{"axial" == TRUE}, the binwidth is adjusted to guarantee symmetrical fan
 x <- rvm(100, mean = 90, k = 5)
 rose(x, axial = FALSE, border = TRUE)
 
-data("san_andreas")
-rose(san_andreas$azi, dots = TRUE, main = "dot plot")
+data("san_andreas") #'
+rose(san_andreas$azi, main = "equal area")
+rose(san_andreas$azi, equal_area = FALSE, main = "equal angle")
+
+# weighted frequencies:
 rose(san_andreas$azi, weights = 1 / san_andreas$unc, main = "weighted")
+
+# add dots
+rose(san_andreas$azi, dots = TRUE, main = "dot plot", jitter = .2)
+rose(san_andreas$azi,
+  dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21,
+  main = "stacked dot plot"
+)
 }

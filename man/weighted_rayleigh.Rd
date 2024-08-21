@@ -4,7 +4,7 @@
 \alias{weighted_rayleigh}
 \title{Weighted Goodness-of-fit Test for Circular Data}
 \usage{
-weighted_rayleigh(x, mu = NULL, w = NULL, axial = TRUE)
+weighted_rayleigh(x, mu = NULL, w = NULL, axial = TRUE, quiet = FALSE)
 }
 \arguments{
 \item{x}{numeric vector. Values in degrees}
@@ -17,10 +17,16 @@ non-weighted Rayleigh test is performed.}
 
 \item{axial}{logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
 (\code{TRUE}, the default) or directional, i.e. \eqn{2 \pi}-periodical (\code{FALSE}).}
+
+\item{quiet}{logical. Prints the test's decision.}
 }
 \value{
 a list with the components:
 \describe{
+\item{\code{R} or \code{C}}{mean resultant length or the dispersion (if \code{mu} is
+specified). Small values of \code{R} (large values of \code{C}) will reject
+uniformity. Negative values of \code{C} indicate that vectors point in opposite
+directions (also lead to rejection).}
 \item{\code{statistic}}{Test statistic}
 \item{\code{p.value}}{significance level of the test statistic}
 }
@@ -31,9 +37,9 @@ distribution with a priori expected von Mises concentration.
 }
 \details{
 The Null hypothesis is uniformity (randomness). The alternative is a
-distribution with a specified mean direction (\code{prd}).
-If \code{statistic > p.value}, the null hypothesis is rejected.
-If not, the alternative cannot be excluded.
+distribution with a (specified) mean direction (\code{mu}).
+If \code{statistic >= p.value}, the null hypothesis of randomness is rejected and
+angles derive from a distribution with a (or the specified) mean direction.
 }
 \examples{
 # Load data

@@ -30,6 +30,7 @@ eu_na <- equivalent_rotation(morvel, fixed = "na", rot = "eu")
 stress_analysis(iceland, PoR = eu_na, type = "out", pb = eu_na_boundary)
 PoR_stress2grid(iceland, eu_na)
 
+
 # test model_shmax
 euler <- subset(nuvel1, nuvel1$plate.rot == "na") # North America relative to Pacific
 point <- data.frame(lat = 45, lon = 20)
@@ -92,7 +93,7 @@ test.weights <- 1 / c(5, 1, 2, 4)
 test_that("Output of functions is as expected", {
   expect_equal(longitude_modulo(-361), -1)
   expect_equal(abs_vel(0.21, 0, r = 1), 0)
-  expect_equal(as.numeric(parse_wsm_quality(c("A", "E", "F", "G", 5))), c(15, NA, NA, NA, NA))
+  expect_equal(as.numeric(parse_wsm_quality(c("A", "E", "F", "G", 5))), c(15, 90, NA, NA, NA))
   expect_equal(circular_median(c(15, 16)), 15.5)
   expect_equal(circular_median(c(15, 15, 16)), 15)
   expect_equal(circular_IQR(c(15, 16, 15, 15)), 1)
@@ -101,6 +102,15 @@ test_that("Output of functions is as expected", {
   expect_equal(cartesian_to_geographical(c(10, 0, 0)), c(0, 0))
   expect_equal(geographical_to_cartesian(c(90, 0)), c(0, 0, 1))
 })
+
+sa.por <- PoR_shmax(san_andreas, na_pa, "right")
+test_that("Compe to {circular} package", {
+  expect_equal(
+    circular_mean(sa.por$azi.PoR),
+    ((circular::mean.circular(circular::circular(2 * sa.por$azi.PoR, units = "degrees", modulo = "asis")) |> as.numeric() / 2) %% 180)
+  )
+})
+
 
 # test output is NULL ----------------------------------------------------------
 # test_that("Statistics return NULL when too few numbers", {
@@ -150,4 +160,47 @@ test_that("Error message if incorrect type argument", {
   expect_error(eulerpole_loxodromes(ep3))
   expect_error(eulerpole_loxodromes(ep1, angle = 90, cw = FALSE))
   expect_error(eulerpole_paths(ep3))
+})
+
+
+## test azimuth conversion
+test_that("Azimuth back conversion", {
+  na_pa <- subset(nuvel1, nuvel1$plate.rot == "na")
+  san_andreas$azi.PoR <- PoR_shmax(san_andreas, na_pa)
+
+  eu_na <- equivalent_rotation(nuvel1, "eu", "na")
+  iceland$azi.PoR <- PoR_shmax(iceland, eu_na)
+
+  eu_in <- equivalent_rotation(nuvel1, "eu", "in")
+  tibet$azi.PoR <- PoR_shmax(tibet, eu_in)
+
+  expect_equal(PoR2Geo_azimuth(san_andreas, na_pa), san_andreas$azi %% 180)
+  expect_equal(PoR2Geo_azimuth(iceland, eu_na), iceland$azi %% 180)
+  expect_equal(PoR2Geo_azimuth(tibet, eu_in), tibet$azi %% 180)
+
+  san_andreas_por <- geographical_to_PoR_sf(san_andreas, na_pa)
+  por_crds <- sf::st_coordinates(san_andreas_por) |> as.data.frame()
+  san_andreas_por$lat.PoR <- por_crds$Y
+  san_andreas_por$lon.PoR <- por_crds$X
+
+  expect_equal(round(PoR2Geo_azimuth(san_andreas_por, na_pa), 12) %% 180, san_andreas$azi %% 180)
+})
+
+test_that("Cooridnate conversion sf", {
+  san_andreas_por <- geographical_to_PoR_sf(san_andreas, na_pa) |>
+    PoR_to_geographical_sf(na_pa)
+  por_crds <- sf::st_coordinates(san_andreas_por)
+  geo_crds <- sf::st_coordinates(san_andreas)
+
+  expect_equal(por_crds, geo_crds)
+})
+
+test_that("Cooridnate conversion df", {
+  geo_crds <- sf::st_coordinates(san_andreas)
+
+  san_andreas_por2 <- geographical_to_PoR(san_andreas, na_pa) |>
+    PoR_to_geographical(na_pa)
+  por_crds2 <- cbind(X = san_andreas_por2$lon, Y = san_andreas_por2$lat)
+
+  expect_equal(por_crds2, geo_crds)
 })

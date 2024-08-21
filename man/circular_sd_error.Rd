@@ -19,10 +19,13 @@ length as \code{x}.}
 should be stripped before the computation proceeds.}
 }
 \value{
-Angle in degrees
+numeric
 }
 \description{
-Measure of the chance variation expected from sample to sample in estimates of the mean direction.
+Measure of the chance variation expected from sample to sample in estimates
+of the mean direction.
+It is a parametric estimate of the the circular standard error of the mean direction
+by the particular form of the standard error for the von Mises distribution.
 The approximated standard error of the mean direction is computed by the mean
 resultant length and the MLE concentration parameter \eqn{\kappa}.
 }
@@ -43,6 +46,8 @@ sa.por <- PoR_shmax(san_andreas, PoR, "right")
 circular_sd_error(sa.por$azi.PoR, w = 1 / san_andreas$unc)
 }
 \references{
+N.I. Fisher (1993) Statistical Analysis of Circular Data, Cambridge University Press.
+
 Davis (1986) Statistics and data analysis in geology. 2nd ed., John Wiley & Sons.
 }
 \seealso{

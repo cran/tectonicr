@@ -22,7 +22,7 @@ knitr::opts_chunk$set(
 This vignette teaches you how to handle large stress datasets and how to 
 retrieve relative plate motions parameters from a set of plate motions. 
 
-```{r setup, echo=TRUE}
+```{r setup, echo=TRUE, message=FALSE}
 library(tectonicr)
 library(ggplot2) # load ggplot library
 ```
@@ -37,6 +37,9 @@ is included as an example data set and can be imported through:
 data("san_andreas")
 head(san_andreas)
 ```
+
+> The full or an individually filtered world stress map dataset can be 
+downloaded by `download_WSM2016()`
 
 Modeling the stress directions (wrt. to the geographic North pole) using the 
 Pole of Oration (PoR) of the motion of North America relative to the Pacific 
