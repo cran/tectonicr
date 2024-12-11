@@ -13,6 +13,8 @@ vm_qqplot(
   xlab = "von Mises quantile function",
   ylab = "Empirical quantile function",
   main = "von Mises Q-Q Plot",
+  col = "#B63679FF",
+  add_line = TRUE,
   ...
 )
 }
@@ -31,6 +33,10 @@ If \code{NULL}, it will be estimated from \code{x}.}
 
 \item{xlab, ylab, main}{plot labels.}
 
+\item{col}{color for the dots.}
+
+\item{add_line}{logical. Whether to connect the points by straight lines?}
+
 \item{...}{graphical parameters}
 }
 \value{
@@ -41,9 +47,11 @@ Produces a Q-Q plot of the data against a specified von Mises distribution
 to graphically assess the goodness of fit of the model.
 }
 \examples{
+# von Mises distribution
 x_vm <- rvm(100, mean = 0, kappa = 4)
 vm_qqplot(x_vm, axial = FALSE, pch = 20)
 
+# uniform distribution
 x_unif <- runif(100, 0, 360)
 vm_qqplot(x_unif, axial = FALSE, pch = 20)
 }

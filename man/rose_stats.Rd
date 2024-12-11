@@ -10,10 +10,11 @@ rose_stats(
   axial = TRUE,
   avg = c("mean", "median", "sample_median"),
   spread = c("CI", "fisher", "sd", "IQR", "mdev"),
-  avg.col = "#85112AFF",
+  f = 1,
+  avg.col = "#B63679FF",
   avg.lty = 2,
   avg.lwd = 1.5,
-  spread.col = ggplot2::alpha("#85112AFF", 0.2),
+  spread.col = ggplot2::alpha("#B63679FF", 0.2),
   spread.border = FALSE,
   spread.lty = NULL,
   spread.lwd = NULL,
@@ -37,6 +38,8 @@ sample median (\code{"sample_median"}).}
 Either 95\% confidence interval (\code{"CI"}, the default), Fishers confidence interval (\code{"fisher"}), the circular
 standard deviation (\code{"sd"}), the Quasi interquartile range on the circle
 (\code{"IQR"}), or the sampke median deviation (\code{"mdev"}). \code{NULL} if no fan should be drawn.}
+
+\item{f}{factor applied on spread. \code{1} by default.}
 
 \item{avg.col}{color for the average line}
 

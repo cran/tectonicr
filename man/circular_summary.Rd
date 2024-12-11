@@ -2,15 +2,18 @@
 % Please edit documentation in R/statistics.R
 \name{circular_summary}
 \alias{circular_summary}
-\title{Circular Summary statistics}
+\title{Circular Summary Statistics}
 \usage{
-circular_summary(x, w = NULL, axial = TRUE, na.rm = FALSE)
+circular_summary(x, w = NULL, kappa = 2, axial = TRUE, na.rm = FALSE)
 }
 \arguments{
 \item{x}{numeric vector. Values in degrees.}
 
 \item{w}{(optional) Weights. A vector of positive numbers and of the same
 length as \code{x}.}
+
+\item{kappa}{numeric. von Mises distribution concentration parameter used
+for the circular mode.}
 
 \item{axial}{logical. Whether the data are axial, i.e. pi-periodical
 (\code{TRUE}, the default) or directional, i.e. \eqn{2 \pi}-periodical (\code{FALSE}).}
@@ -22,8 +25,8 @@ should be stripped before the computation proceeds.}
 named vector
 }
 \description{
-Circular mean, standard deviation, variance, quasi-quantiles, 95\% confidence
-angle, standardized skewness and kurtosis
+Circular mean, standard deviation, variance, quasi-quantiles, mode,
+95\% confidence angle, standardized skewness and kurtosis
 }
 \examples{
 data("nuvel1")
@@ -34,5 +37,6 @@ circular_summary(sa.por$azi.PoR, w = 1 / san_andreas$unc)
 }
 \seealso{
 \code{\link[=circular_mean]{circular_mean()}}, \code{\link[=circular_sd]{circular_sd()}}, \code{\link[=circular_var]{circular_var()}},
-\code{\link[=circular_quantiles]{circular_quantiles()}}, \code{\link[=confidence_angle]{confidence_angle()}}, \code{\link[=second_central_moment]{second_central_moment()}}
+\code{\link[=circular_quantiles]{circular_quantiles()}}, \code{\link[=confidence_angle]{confidence_angle()}}, \code{\link[=second_central_moment]{second_central_moment()}},
+\code{\link[=circular_mode]{circular_mode()}}
 }

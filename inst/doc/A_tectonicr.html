@@ -12,7 +12,7 @@
 
 <meta name="author" content="Tobias Stephan" />
 
-<meta name="date" content="2024-08-21" />
+<meta name="date" content="2024-12-11" />
 
 <title>1. Introduction to tectonicr</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">1. Introduction to tectonicr</h1>
 <h4 class="author">Tobias Stephan</h4>
-<h4 class="date">2024-08-21</h4>
+<h4 class="date">2024-12-11</h4>
 
 
 
@@ -430,15 +430,8 @@ Measured Stress</h2>
 steps:</p>
 <p>First, load the package:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(tectonicr)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co">#&gt; Registered S3 methods overwritten by &#39;spatstat.univar&#39;:</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt;   method           from         </span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt;   mean.ecdf        spatstat.geom</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt;   mean.ewcdf       spatstat.geom</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;   print.ewcdf      spatstat.geom</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt;   quantile.density              </span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt;   quantile.ewcdf   spatstat.geom</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># load ggplot library</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; Warning: package &#39;ggplot2&#39; was built under R version 4.3.3</span></span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># load ggplot library</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; Warning: package &#39;ggplot2&#39; was built under R version 4.3.3</span></span></code></pre></div>
 <p>Next, we need to specify coordinates of the Pole of Rotation (PoR) to
 get the directions of the great circles, small circles, and loxodromes
 around the PoR at the given point (e.g. at 45<span class="math inline">\(^{\circ}\)</span>N/20<span class="math inline">\(^{\circ}\)</span>E).</p>
@@ -505,12 +498,13 @@ numeric vector of length of <code>obs</code> or a number).</p>
 <div id="models-of-current-plate-motion" class="section level1">
 <h1>Models of current plate motion</h1>
 <p>The plate motions relative to the Pacific plate according to the
-NUVEL-1A model (DeMets et al. 1990) are included in the package and can
-be imported through:</p>
+NUVEL-1A model (DeMets et al. 1990) are implemented in the package and
+can be imported through:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;nuvel1&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">head</span>(nuvel1)</span></code></pre></div>
 <p>Other current plate motion models, in particulars NNR-MORVEL-56,
-GSRM2.1, REVEL, PB2002, and HS3-NUVEL1A, are available through</p>
+GSRM2.1, REVEL, PB2002, and HS3-NUVEL1A, are implemented and available
+through</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;cpm_models&quot;</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">head</span>(cpm_models)</span></code></pre></div>
 <p>Any desired relative plate motion can be extracted via the

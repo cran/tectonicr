@@ -10,6 +10,8 @@ circular_qqplot(
   xlab = paste("i/(n+1)"),
   ylab = NULL,
   main = "Circular Quantile-Quantile Plot",
+  add_line = TRUE,
+  col = "#B63679FF",
   ...
 )
 }
@@ -20,6 +22,10 @@ circular_qqplot(
 
 \item{xlab, ylab, main}{plot labels.}
 
+\item{add_line}{logical. Whether to connect the points by straight lines?}
+
+\item{col}{color for the dots.}
+
 \item{...}{graphical parameters}
 }
 \value{
@@ -28,15 +34,17 @@ plot
 \description{
 Uniformly distributed orientations should yield a straight line through the
 origin. Systematic departures from linearity will indicate preferred
-orientation in some manner.
+orientation.
 }
 \examples{
+# von Mises distribution
 x_vm <- rvm(100, mean = 0, kappa = 2)
 circular_qqplot(x_vm, pch = 20)
 
 x_norm <- rnorm(100, mean = 0, sd = 25)
 circular_qqplot(x_norm, pch = 20)
 
+# uniform (random) data
 x_unif <- runif(100, 0, 360)
 circular_qqplot(x_unif, pch = 20)
 }

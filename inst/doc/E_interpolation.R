@@ -72,25 +72,3 @@ ggplot(mean_SH_PoR_reduced) +
   scale_alpha("Standard deviation", range = c(1, .25)) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat))
 
-## ----kernel_disp--------------------------------------------------------------
-san_andreas_por <- san_andreas
-san_andreas_por$azi <- PoR_shmax(san_andreas, por, "right")$azi.PoR # transform to PoR azimuth
-san_andreas_por$prd <- 135 # test direction
-san_andreas_kdisp <- kernel_dispersion(san_andreas_por, gridsize = 1, R_range = seq(50, 350, 100))
-san_andreas_kdisp <- compact_grid(san_andreas_kdisp, "dispersion")
-
-ggplot(san_andreas_kdisp) +
-  ggforce::geom_voronoi_tile(
-    aes(lon, lat, fill = stat),
-    max.radius = .7, normalize = FALSE
-  ) +
-  scale_fill_viridis_c("Dispersion", limits = c(0, 1)) +
-  geom_sf(data = trajectories, lty = 2) +
-  geom_spoke(
-    data = san_andreas,
-    aes(lon, lat, angle = deg2rad(90 - azi), alpha = unc),
-    radius = .5, position = "center_spoke", lwd = .2, colour = "white"
-  ) +
-  scale_alpha("Standard deviation", range = c(1, .25)) +
-  coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat))
-
