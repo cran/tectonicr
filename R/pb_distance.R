@@ -4,7 +4,7 @@
 #' the range of 0 to 180 degrees
 #'
 #' @param x numeric, angular distance (in degrees)
-#'
+#' @keywords internal
 #' @returns numeric vector
 distance_mod <- function(x) {
   # sapply(X = x, FUN = get_distance_mod)
@@ -16,7 +16,7 @@ distance_mod <- function(x) {
 #' @param lon,lat numeric vectors
 #' @param pb.coords matrix
 #' @param tangential,km logical
-#'
+#' @keywords internal
 #' @seealso [distance_from_pb()]
 get_distance <- function(lon, lat, pb.coords, tangential, km) {
   delta.lat <- distance_mod(pb.coords[, 2] - lat)
@@ -47,7 +47,8 @@ get_distance <- function(lon, lat, pb.coords, tangential, km) {
 #'
 #' Absolute distance of data points from the nearest plate boundary in degree
 #'
-#' @param x,pb `sf` objects of the data points and the plate boundary
+#' @param x `sf` or `data.frame` objects of the data.points in geographical coordinate system
+#' @param pb `sf` objects of the  plate boundary
 #' geometries in the geographical coordinate system
 #' @param PoR Pole of Rotation. \code{"data.frame"} or object of class \code{"euler.pole"}
 #' containing the geographical coordinates of the Pole of Rotation
@@ -93,15 +94,14 @@ get_distance <- function(lon, lat, pb.coords, tangential, km) {
 #' range(res.km)
 distance_from_pb <- function(x, PoR, pb, tangential = FALSE, km = FALSE, ...) {
   stopifnot(
-    inherits(x, "sf"),
+    # inherits(x, "sf"),
     inherits(pb, "sf"),
     is.logical(tangential),
     is.logical(km),
     is.data.frame(PoR) | is.euler(PoR)
   )
 
-  x.coords <- sf::st_geometry(x) |>
-    geographical_to_PoR_sf(PoR = PoR) |>
+  x.coords <- geographical_to_PoR(x, PoR = PoR) |>
     sf::st_coordinates()
   pb.coords <-
     sf::st_geometry(pb) |>
@@ -123,7 +123,7 @@ distance_from_pb <- function(x, PoR, pb, tangential = FALSE, km = FALSE, ...) {
 #' @param lon,lat,pb.bearing numeric vectors
 #' @param pb.coords matrix
 #' @param tangential logical
-#'
+#' @keywords internal
 #' @seealso [projected_pb_strike()]
 get_projected_pb_strike <- function(lon, lat, pb.coords, pb.bearing, tangential) {
   delta.lat <- distance_mod(pb.coords[, 2] - lat)

@@ -12,7 +12,7 @@
 
 <meta name="author" content="Tobias Stephan" />
 
-<meta name="date" content="2024-12-11" />
+<meta name="date" content="2025-02-26" />
 
 <title>1. Introduction to tectonicr</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">1. Introduction to tectonicr</h1>
 <h4 class="author">Tobias Stephan</h4>
-<h4 class="date">2024-12-11</h4>
+<h4 class="date">2025-02-26</h4>
 
 
 
@@ -509,7 +509,7 @@ through</p>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="fu">head</span>(cpm_models)</span></code></pre></div>
 <p>Any desired relative plate motion can be extracted via the
 following:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>gsrm <span class="ot">&lt;-</span> <span class="fu">subset</span>(cpm_models, model <span class="sc">==</span> <span class="st">&quot;GSRM2.1&quot;</span>)</span>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>gsrm <span class="ot">&lt;-</span> cpm_models[[<span class="st">&quot;GSRM2.1&quot;</span>]]</span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="fu">equivalent_rotation</span>(gsrm, <span class="at">rot =</span> <span class="st">&quot;na&quot;</span>, <span class="at">fixed =</span> <span class="st">&quot;eu&quot;</span>)</span></code></pre></div>
 </div>
 <div id="references" class="section level1">

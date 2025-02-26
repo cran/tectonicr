@@ -23,7 +23,7 @@ circular_IQR(san_andreas$azi, 1 / san_andreas$unc) # interquartile range
 
 ## ----por, echo=TRUE-----------------------------------------------------------
 data("cpm_models")
-por <- subset(cpm_models, model == "NNR-MORVEL56") |>
+por <- cpm_models[["NNR-MORVEL56"]] |>
   equivalent_rotation("na", "pa")
 san_andreas.por <- PoR_shmax(san_andreas, por, type = "right")
 
@@ -35,7 +35,7 @@ circular_median(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 circular_IQR(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 
 ## ----summary_stats, echo=TRUE-------------------------------------------------
-circular_summary(san_andreas.por$azi.PoR, 1 / san_andreas$unc, kappa = 10)
+circular_summary(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 
 ## ----rose1, echo=TRUE---------------------------------------------------------
 rose(san_andreas$azi,
@@ -44,14 +44,14 @@ rose(san_andreas$azi,
 )
 
 # add the density curve
-plot_density(san_andreas$azi, kappa = 10, col = "#51127CFF", shrink = 1.5)
+plot_density(san_andreas$azi, kappa = 20, col = "#51127CFF", shrink = 1.5)
 
 ## ----rose2, echo=TRUE---------------------------------------------------------
 rose(san_andreas.por$azi,
   weights = 1 / san_andreas$unc, main = "PoR",
   dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21
 )
-plot_density(san_andreas.por$azi, kappa = 10, col = "#51127CFF", shrink = 1.5)
+plot_density(san_andreas.por$azi, kappa = 20, col = "#51127CFF", shrink = 1.5)
 
 # show the predicted direction
 rose_line(135, radius = 1.1, col = "#FB8861FF")

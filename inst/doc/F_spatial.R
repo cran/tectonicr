@@ -12,8 +12,7 @@ library(ggplot2) # load ggplot library
 data("san_andreas")
 
 data("cpm_models")
-por <- cpm_models |>
-  subset(model == "NNR-MORVEL56") |>
+por <- cpm_models[["NNR-MORVEL56"]] |>
   equivalent_rotation("na", "pa")
 
 plate_boundary <- subset(plates, plates$pair == "na-pa")
@@ -23,10 +22,10 @@ circular_summary(san_andreas$azi, w = 1 / san_andreas$unc)
 
 ## ----interpolation,message=FALSE,warning=FALSE--------------------------------
 spatial_stats_R <- PoR_stress2grid_stats(san_andreas, PoR = por, gridsize = 1, R_range = 100)
-head(spatial_stats_R)
+subset(spatial_stats_R, !is.na(mean)) |> head()
 
 ## ----interpolation2,message=FALSE,warning=FALSE-------------------------------
-spatial_stats <- PoR_stress2grid_stats(san_andreas, PoR = por, gridsize = 1, R_range = seq(50, 350, 100), kappa = 10)
+spatial_stats <- PoR_stress2grid_stats(san_andreas, PoR = por, gridsize = 1, R_range = seq(50, 350, 100))
 
 ## ----plot, warning=FALSE, message=FALSE---------------------------------------
 trajectories <- eulerpole_loxodromes(x = por, n = 40, cw = FALSE)
@@ -34,8 +33,8 @@ trajectories <- eulerpole_loxodromes(x = por, n = 40, cw = FALSE)
 ggplot(spatial_stats) +
   geom_sf(data = plate_boundary, color = "red") +
   geom_sf(data = trajectories, lty = 2) +
-  geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .5, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - mean), alpha = sd, color = mdr), radius = 1, position = "center_spoke", lwd = 1) +
+  geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .3, linewisth = .5, color = "grey30", position = "center_spoke") +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - mean), alpha = sd, color = mdr), radius = .75, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "Standard deviation", range = c(1, .25)) +
   scale_color_viridis_c(
@@ -53,8 +52,8 @@ spatial_stats_comp <- spatial_stats |>
 ggplot(spatial_stats_comp) +
   geom_sf(data = plate_boundary, color = "red") +
   geom_sf(data = trajectories, lty = 2) +
-  geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .5, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - median), alpha = `95%CI`, color = skewness), radius = 1, position = "center_spoke", lwd = 1) +
+  geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .3, color = "grey30", position = "center_spoke") +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - median), alpha = `95%CI`, color = skewness), radius = .5, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "95% CI", range = c(1, .25)) +
   scale_color_viridis_c(
@@ -65,8 +64,8 @@ ggplot(spatial_stats_comp) +
 ggplot(spatial_stats_comp) +
   geom_sf(data = plate_boundary, color = "red") +
   geom_sf(data = trajectories, lty = 2) +
-  geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .5, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - mode), alpha = `95%CI`, color = abs(kurtosis)), radius = 1, position = "center_spoke", lwd = 1) +
+  geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .3, color = "grey30", position = "center_spoke") +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - mode), alpha = `95%CI`, color = abs(kurtosis)), radius = .5, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "95% CI", range = c(1, .25)) +
   scale_color_viridis_c(

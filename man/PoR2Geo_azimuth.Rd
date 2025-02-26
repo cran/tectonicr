@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_shmax.R
 \name{PoR2Geo_azimuth}
 \alias{PoR2Geo_azimuth}
-\title{Azimuth conversion from PoR to geographical coordinate reference system}
+\title{Azimuth Conversion From PoR to Geographical Coordinate Reference System}
 \usage{
 PoR2Geo_azimuth(x, PoR)
 }
@@ -28,7 +28,7 @@ data("san_andreas")
 san_andreas$azi.PoR <- PoR_shmax(san_andreas, PoR)
 
 # convert back to geo CRS
-PoR2Geo_azimuth(san_andreas, PoR)
+PoR2Geo_azimuth(san_andreas, PoR) |> head()
 }
 \references{
 Stephan, T., Enkelmann, E., and Kroner, U. "Analyzing the

@@ -98,6 +98,7 @@ azi_plot <- ggplot(san_andreas.res, aes(x = distance, y = azi.PoR)) +
     ),
     size = .25
   ) +
+  scale_x_continuous(breaks = seq(-10, 10, 2)) +
   scale_y_continuous(
     breaks = seq(-180, 360, 45),
     sec.axis = sec_axis(
@@ -111,46 +112,32 @@ azi_plot <- ggplot(san_andreas.res, aes(x = distance, y = azi.PoR)) +
   scale_color_manual(name = "Tectonic regime", values = stress_colors(), breaks = names(stress_colors()))
 print(azi_plot)
 
-## ----san.andreas.distanceplot1_roll, echo=TRUE, echo=TRUE, message=FALSE, warning=FALSE----
-san_andreas.res_roll <- san_andreas.res[order(san_andreas.res$distance), ]
-
-san_andreas.res_roll$r_mean <- roll_circstats(
-  san_andreas.res_roll$azi.PoR,
-  w = 1 / san_andreas.res_roll$unc,
-  FUN = circular_mean, width = 51
-)
-
-san_andreas.res_roll$r_conf95 <- roll_confidence(
-  san_andreas.res_roll$azi.PoR,
-  w = 1 / san_andreas.res_roll$unc,
-  width = 51
+## ----distance_bin, echo=TRUE, echo=TRUE, message=FALSE, warning=FALSE---------
+san_andreas_binned <- distance_binned_stats(
+  azi = san_andreas.res$azi.PoR,
+  distance = san_andreas.res$distance,
+  unc = san_andreas$unc,
+  prd = 135,
+  width.breaks = 2
 )
 
 azi_plot +
   geom_step(
-    data = san_andreas.res_roll,
-    aes(distance, r_mean - r_conf95),
+    data = san_andreas_binned,
+    aes(distance_median, mean - CI),
     lty = 2
   ) +
   geom_step(
-    data = san_andreas.res_roll,
-    aes(distance, r_mean + r_conf95),
+    data = san_andreas_binned,
+    aes(distance_median, mean + CI),
     lty = 2
   ) +
   geom_step(
-    data = san_andreas.res_roll,
-    aes(distance, r_mean)
+    data = san_andreas_binned,
+    aes(distance_median, mean)
   )
 
 ## ----san.andreas.distanceplot2, echo=TRUE, echo=TRUE, message=FALSE, warning=FALSE----
-# Rolling norm chisq:
-san_andreas.res_roll$roll_nchisq <- roll_normchisq(
-  san_andreas.res_roll$azi.PoR,
-  san_andreas.res_roll$prd,
-  san_andreas.res_roll$unc,
-  width = 51
-)
-
 # plotting:
 ggplot(san_andreas.res, aes(x = distance, y = nchisq)) +
   coord_cartesian(ylim = c(0, 1)) +
@@ -160,13 +147,14 @@ ggplot(san_andreas.res, aes(x = distance, y = nchisq)) +
   scale_y_continuous(sec.axis = sec_axis(
     ~.,
     name = NULL,
-    breaks = c(.15 / 2, .33, .7 + 0.15),
-    labels = c("Good fit", "Random", "Systematic\nmisfit")
+    breaks = c(.15 / 2, (.33 - .15) / 2 + .15, (.7 - .33) / 2 + .33, .7 + 0.15),
+    labels = c("Good fit", "Acceptable fit", "Random", "Systematic\nmisfit")
   )) +
+  scale_x_continuous(breaks = seq(-10, 10, 2)) +
   scale_color_manual(name = "Tectonic regime", values = stress_colors(), breaks = names(stress_colors())) +
   geom_step(
-    data = san_andreas.res_roll,
-    aes(distance, roll_nchisq)
+    data = san_andreas_binned,
+    aes(distance_median, nchisq)
   )
 
 ## ----plot_base, echo=TRUE, warning=FALSE, message=FALSE-----------------------

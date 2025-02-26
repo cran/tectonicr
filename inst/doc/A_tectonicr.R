@@ -38,6 +38,6 @@ norm_chisq(obs = 90, prd$sc, unc = 10)
 #  head(cpm_models)
 
 ## ----equivalent_rotation, eval=FALSE, include=TRUE----------------------------
-#  gsrm <- subset(cpm_models, model == "GSRM2.1")
+#  gsrm <- cpm_models[["GSRM2.1"]]
 #  equivalent_rotation(gsrm, rot = "na", fixed = "eu")
 

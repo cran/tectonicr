@@ -1,21 +1,14 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 # tectonicr <a href="https://cran.r-project.org/package=tectonicr/"><img src="man/figures/logo.png" alt="tectonicr website" align="right" height="104"/></a>
 
 <!-- badges: start -->
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/tectonicr)](https://CRAN.R-project.org/package=tectonicr)
-[![](https://img.shields.io/badge/devel%20version-0.4.4-orange.svg)](https://github.com/tobiste/tectonicr)
+[![](https://img.shields.io/badge/devel%20version-0.4.5.9001-orange.svg)](https://github.com/tobiste/tectonicr)
 [![](http://cranlogs.r-pkg.org/badges/grand-total/tectonicr?color=yellow)](https://cran.r-project.org/package=tectonicr)
 [![R-CMD-check](https://github.com/tobiste/tectonicr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tobiste/tectonicr/actions/workflows/R-CMD-check.yaml)
 [![DOI](https://img.shields.io/badge/doi-10.32614/CRAN.package.tectonicr-slategrey.svg)](https://doi.org/10.32614/CRAN.package.tectonicr)
-[![License: GPL
-v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
+[![License: GPLv3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](http://www.gnu.org/licenses/gpl-3.0)
 <!-- [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11199557.svg)](https://doi.org/10.5281/zenodo.11199557) -->
 
 <!-- badges: end -->
@@ -115,7 +108,7 @@ and you can run `tectonicr` on your browser:
 ## Author
 
 Tobias Stephan
-([tstephan\@lakeheadu.ca](mailto:tstephan@lakeheadu.ca){.email})
+([tstephan\@lakeheadu.ca](mailto:tstephan@lakeheadu.ca))
 
 ## Feedback, issues, and contributions
 

@@ -6,8 +6,10 @@
 #'
 #' @return named two element vector
 #'
+#' @keywords internal
 #' @examples
 #' \dontrun{
+#' set.seed(1)
 #' x <- rvm(100, 0, 5)
 #' mean_SC(x)
 #' }
@@ -119,6 +121,7 @@ mean_resultant_length <- function(x, w = NULL, na.rm = TRUE) {
 #' \doi{10.1016/j.tecto.2009.07.023}
 #'
 #' @examples
+#' set.seed(1)
 #' x <- rvm(10, 0, 100) %% 180
 #' unc <- stats::runif(100, 0, 10)
 #' circular_mean(x, 1 / unc)
@@ -175,12 +178,13 @@ circular_var <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
   1 - R
 }
 
-
+#' @keywords internal
 var_to_sd <- function(v) {
   s <- sqrt(-2 * log(1 - v))
   rad2deg(s)
 }
 
+#' @keywords internal
 sd_to_var <- function(s) {
   s_rad <- deg2rad(s)
   1 - exp(-s_rad^2 / 2)
@@ -324,7 +328,7 @@ circular_quantiles <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
     setNames(res %% mod, nm = c("25%", "50%", "75%"))
   } else {
     message("x needs more than 3 values")
-    return(NULL)
+    return(rep(NA, 3))
   }
 }
 
@@ -355,8 +359,6 @@ sample_circular_dispersion <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) 
 #' `1` or `length(x)`
 #' @param w,w.y (optional) Weights. A vector of positive numbers and of the same
 #' length as \code{x}. `w.y` is the (optional) weight of `y`.
-#' @param norm logical. Whether the dispersion should be normalized by the
-#' maximum possible angular difference.
 #' @param axial logical. Whether the data are axial, i.e. pi-periodical
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
 #' @param na.rm logical. Whether \code{NA} values in \code{x}
@@ -425,12 +427,12 @@ circular_distance <- function(x, y, axial = TRUE, na.rm = TRUE) {
   }
 
   diff <- x - y
-  (1 - cosd(f * diff)) / f
+  (1 - cosd(f * diff)) / 2
 }
 
 #' @rdname dispersion
 #' @export
-circular_dispersion <- function(x, y = NULL, w = NULL, w.y = NULL, norm = FALSE, axial = TRUE, na.rm = TRUE) {
+circular_dispersion <- function(x, y = NULL, w = NULL, w.y = NULL, axial = TRUE, na.rm = TRUE) {
   if (is.null(y)) {
     circular_var(x, w, axial, na.rm)
   } else {
@@ -460,10 +462,13 @@ circular_dispersion <- function(x, y = NULL, w = NULL, w.y = NULL, norm = FALSE,
 
     Z <- sum(w)
 
-    md <- ifelse(norm, 2, 1)
 
     cdists <- circular_distance(x, y, axial, na.rm = FALSE)
-    sum(w * cdists) / (Z * md)
+
+    # norm <- !axial
+    # md <- ifelse(norm, 2, 1)
+    # sum(w * cdists) / (Z * md)
+    sum(w * cdists) / Z
   }
 }
 
@@ -494,7 +499,7 @@ circular_distance_alt <- function(x, y, axial = TRUE, na.rm = TRUE) {
 
 #' @rdname dispersion
 #' @export
-circular_dispersion_alt <- function(x, y = NULL, w = NULL, w.y = NULL, norm = FALSE, axial = TRUE, na.rm = TRUE) {
+circular_dispersion_alt <- function(x, y = NULL, w = NULL, w.y = NULL, axial = TRUE, na.rm = TRUE) {
   if (is.null(y)) {
     circular_var(x, w, axial, na.rm)
   } else {
@@ -524,10 +529,10 @@ circular_dispersion_alt <- function(x, y = NULL, w = NULL, w.y = NULL, norm = FA
 
     Z <- sum(w)
 
-    md <- ifelse(norm, 2, 1)
+    # md <- ifelse(norm, 2, 1)
 
     cdists <- circular_distance_alt(x, y, axial, na.rm = FALSE)
-    sum(w * cdists) / (Z * md)
+    sum(w * cdists) / Z
   }
 }
 
@@ -694,7 +699,8 @@ prd_err <- function(dist_PoR, sigma_PoR = 1) {
   acosd(acos_beta) / 2
 }
 
-
+#' @keywords internal
+#' @importFrom stats qnorm
 z_score <- function(conf.level) {
   stats::qnorm(1 - (1 - conf.level) / 2)
 }
@@ -763,8 +769,7 @@ circular_sd_error <- function(x, w = NULL, axial = TRUE, na.rm = TRUE) {
   x <- (x * f) %% 360
   R <- mean_resultant_length(x, w = w, na.rm = FALSE)
 
-  sde <- 1 / sqrt(n * R * kappa)
-  return(sde)
+  1 / sqrt(n * R * kappa)
 }
 
 #' Confidence Interval around the Mean Direction of Circular Data
@@ -822,7 +827,10 @@ confidence_angle <- function(x, conf.level = .95, w = NULL, axial = TRUE, na.rm 
 
   Z_alpha <- z_score(conf.level)
   sde <- circular_sd_error(x, w, axial, na.rm)
-  asind(Z_alpha * sde) * f
+
+  temp <- Z_alpha * sde
+  if (temp > 1) temp <- 1 # I don't understand yet why sometimes sde > 1/Z_alpha (which makes asin undefined). Hence I set this term to 1 to make it work. Not ideal though...
+  asind(temp) * f
 }
 
 #' @rdname confidence
@@ -890,7 +898,11 @@ confidence_interval_fisher <- function(x, conf.level = 0.95, w = NULL, axial = T
     print_message <- "Parametric estimate"
     disp <- sample_circular_dispersion(x = x, w = w, axial = axial, na.rm = na.rm)
     sde <- sqrt(disp / n)
-    conf.angle <- asind(z_score(conf.level) * sde)
+
+    temp <- z_score(conf.level) * sde
+    if (temp > 1) temp <- 1 # I don't understand yet why sometimes sde > 1/Z_alpha (which makes asin undefined). Hence I set this term to 1 to make it work. Not ideal though...
+    conf.angle <- asind(temp)
+
     mu <- circular_mean(x = x, w = w, axial = axial, na.rm = na.rm)
     conf.interval <- c(mu - conf.angle, mu + conf.angle)
   }
@@ -898,7 +910,7 @@ confidence_interval_fisher <- function(x, conf.level = 0.95, w = NULL, axial = T
   list(mu = mu, conf.angle = conf.angle, conf.interval = conf.interval)
 }
 
-
+#' @keywords internal
 circular_dispersion_i <- function(x, id, ...) {
   circular_dispersion(x$x[id], y = x$mean[id], w = x$w[id], w.y = x$w.y[id], ...)
 }
@@ -1053,7 +1065,8 @@ second_central_moment <- function(x, w = NULL, axial = TRUE, na.rm = FALSE) {
 #' @name sample_median
 #'
 #' @examples
-#' x <- rvm(n = 100, mean = 0, kappa = 1)
+#' set.seed(1)
+#' x <- rvm(n = 100, mean = 0, kappa = 10)
 #' circular_sample_median(x)
 #' circular_sample_median_deviation(x)
 #'
@@ -1092,27 +1105,32 @@ circular_sample_median_deviation <- function(x, axial = TRUE, na.rm = TRUE) {
 
 #' Circular Mode
 #'
-#' Angle of maximum density of a specified von Mises distribution
+#' MLE angle (maximum density) using a von Mises distribution kernel with
+#' specified concentration.
 #'
 #' @param x numeric vector. Values in degrees.
 #' @param axial logical. Whether the data are axial, i.e. pi-periodical
 #' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).#' @param kappa
-#' @param kappa von Mises distribution concentration parameter
+#' @param kappa von Mises distribution concentration parameter. Will be
+#' estimated using [est.kappa()] if not provided.
 #' @param n the number of equally spaced points at which the density is to be estimated.
 #'
 #' @return numeric
 #' @export
 #'
 #' @examples
-#' x <- rvm(10, 0, 100) %% 180
-#' circular_mode(x, kappa = 2)
-circular_mode <- function(x, kappa, axial = TRUE, n = 512) {
-  density <- circular_density(x, kappa = kappa, n = n, axial = axial)
+#' set.seed(1)
+#' x <- rvm(10, 0, 100)
+#' circular_mode(x, kappa = est.kappa(x))
+circular_mode <- function(x, kappa = NULL, axial = TRUE, n = 512) {
+  if (is.null(kappa)) kappa <- est.kappa(x, axial = axial, na.rm = TRUE)
+  dns <- circular_density(x, kappa = kappa, n = n, axial = axial)
 
   f <- as.numeric(axial) + 1
 
-  angles <- c(1:n) / n * 360 / f
-  angles[which.max(density)]
+  # angles <- (c(1:n) / n) * 360 / f
+  angles <- seq(0, 360, length.out = n)
+  angles[which.max(dns)]
 }
 
 
@@ -1123,7 +1141,7 @@ circular_mode <- function(x, kappa, axial = TRUE, n = 512) {
 #'
 #' @inheritParams circular_mean
 #' @param kappa  numeric. von Mises distribution concentration parameter used
-#' for the circular mode.
+#' for the circular mode. Will be estimated using [est.kappa()] if not provided.
 #'
 #' @return named vector
 #' @export
@@ -1137,7 +1155,7 @@ circular_mode <- function(x, kappa, axial = TRUE, n = 512) {
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' circular_summary(sa.por$azi.PoR)
 #' circular_summary(sa.por$azi.PoR, w = 1 / san_andreas$unc)
-circular_summary <- function(x, w = NULL, kappa = 2, axial = TRUE, na.rm = FALSE) {
+circular_summary <- function(x, w = NULL, kappa = NULL, axial = TRUE, na.rm = FALSE) {
   if (is.null(w)) {
     w <- rep(1, times = length(x))
   }
@@ -1152,6 +1170,8 @@ circular_summary <- function(x, w = NULL, kappa = 2, axial = TRUE, na.rm = FALSE
   w <- data[, "w"]
 
   n <- length(x)
+
+  if (is.null(kappa)) kappa <- est.kappa(x, w = w, axial = axial, na.rm = FALSE)
 
   x_mean <- circular_mean(x, w, axial, F)
   x_sd <- circular_sd(x, w, axial, F)
