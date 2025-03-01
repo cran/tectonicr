@@ -12,7 +12,7 @@
 
 <meta name="author" content="Tobias Stephan" />
 
-<meta name="date" content="2025-02-26" />
+<meta name="date" content="2025-02-28" />
 
 <title>4. Circular statistics</title>
 
@@ -340,7 +340,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">4. Circular statistics</h1>
 <h4 class="author">Tobias Stephan</h4>
-<h4 class="date">2025-02-26</h4>
+<h4 class="date">2025-02-28</h4>
 
 
 
@@ -506,13 +506,13 @@ can be measured by:</p>
 circular dispersion can be estimated by bootstrapping via:</p>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">circular_dispersion_boot</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> <span class="dv">1</span> <span class="sc">/</span> san_andreas<span class="sc">$</span>unc, <span class="at">R =</span> <span class="dv">1000</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; $MLE</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.191286</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.1904206</span></span>
 <span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; $sde</span></span>
-<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.009531059</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.009594024</span></span>
 <span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; $CI</span></span>
-<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.1731870 0.2108667</span></span></code></pre></div>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.1724784 0.2092028</span></span></code></pre></div>
 <p>The statistical test for the goodness-of-fit is the (weighted)
 <strong>Rayleigh Test</strong> with a specified mean direction (here the
 predicted direction of <span class="math inline">\(135^{\circ}\)</span>:</p>

@@ -1,6 +1,6 @@
 Package: tectonicr
 Title: Analyzing the Orientation of Maximum Horizontal Stress
-Version: 0.4.5
+Version: 0.4.6
 Authors@R: 
     person("Tobias", "Stephan", , "tobias.stephan1@yahoo.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9290-014X"))
@@ -28,8 +28,8 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.3.1
 NeedsCompilation: no
-Packaged: 2025-02-26 16:53:02 UTC; tstephan
+Packaged: 2025-02-28 13:08:47 UTC; tstephan
 Author: Tobias Stephan [aut, cre] (<https://orcid.org/0000-0002-9290-014X>)
 Maintainer: Tobias Stephan <tobias.stephan1@yahoo.com>
 Repository: CRAN
-Date/Publication: 2025-02-26 17:30:02 UTC
+Date/Publication: 2025-03-01 01:40:02 UTC
