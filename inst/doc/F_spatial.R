@@ -25,7 +25,7 @@ spatial_stats_R <- PoR_stress2grid_stats(san_andreas, PoR = por, gridsize = 1, R
 subset(spatial_stats_R, !is.na(mean)) |> head()
 
 ## ----interpolation2,message=FALSE,warning=FALSE-------------------------------
-spatial_stats <- PoR_stress2grid_stats(san_andreas, PoR = por, gridsize = 1, R_range = seq(50, 350, 100))
+spatial_stats <- PoR_stress2grid_stats(san_andreas, PoR = por, gridsize = 1, R_range = seq(50, 350, 100), mode = TRUE)
 
 ## ----plot, warning=FALSE, message=FALSE---------------------------------------
 trajectories <- eulerpole_loxodromes(x = por, n = 40, cw = FALSE)
@@ -53,7 +53,7 @@ ggplot(spatial_stats_comp) +
   geom_sf(data = plate_boundary, color = "red") +
   geom_sf(data = trajectories, lty = 2) +
   geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .3, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - median), alpha = `95%CI`, color = skewness), radius = .5, position = "center_spoke", lwd = 1) +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - median), alpha = CI, color = skewness), radius = .5, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "95% CI", range = c(1, .25)) +
   scale_color_viridis_c(
@@ -65,7 +65,7 @@ ggplot(spatial_stats_comp) +
   geom_sf(data = plate_boundary, color = "red") +
   geom_sf(data = trajectories, lty = 2) +
   geom_spoke(data = san_andreas, aes(lon, lat, angle = deg2rad(90 - azi)), radius = .3, color = "grey30", position = "center_spoke") +
-  geom_spoke(aes(lon, lat, angle = deg2rad(90 - mode), alpha = `95%CI`, color = abs(kurtosis)), radius = .5, position = "center_spoke", lwd = 1) +
+  geom_spoke(aes(lon, lat, angle = deg2rad(90 - mode), alpha = CI, color = abs(kurtosis)), radius = .5, position = "center_spoke", lwd = 1) +
   coord_sf(xlim = range(san_andreas$lon), ylim = range(san_andreas$lat)) +
   scale_alpha(name = "95% CI", range = c(1, .25)) +
   scale_color_viridis_c(

@@ -35,7 +35,7 @@ circular_median(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 circular_IQR(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
 
 ## ----summary_stats, echo=TRUE-------------------------------------------------
-circular_summary(san_andreas.por$azi.PoR, 1 / san_andreas$unc)
+circular_summary(san_andreas.por$azi.PoR, 1 / san_andreas$unc, mode = TRUE)
 
 ## ----rose1, echo=TRUE---------------------------------------------------------
 rose(san_andreas$azi,

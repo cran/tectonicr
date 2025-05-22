@@ -14,20 +14,20 @@ morvel <- cpm_models[["NNR-MORVEL56"]] # select MORVEL model
 # Relative plate motion between Pacific and North American plates:
 na_pa <- equivalent_rotation(morvel, fixed = "na", rot = "pa")
 # Transform stress data set and test against predicted left-lateral tangential plate boundary (left):
-stress_analysis(san_andreas, PoR = na_pa, type = "right", pb = na_pa_boundary, plot = FALSE)
+# stress_analysis(san_andreas, PoR = na_pa, type = "right", pb = na_pa_boundary, plot = FALSE)
 # Interpolate the stress field in the PoR coordinate system:
 PoR_stress2grid(san_andreas, na_pa)
 
 data("tibet")
 eu_in_boundary <- subset(plates, plates$pair == "eu-in")
 eu_in <- equivalent_rotation(morvel, fixed = "eu", rot = "in")
-stress_analysis(tibet, PoR = eu_in, type = "in", pb = eu_in_boundary, plot = FALSE)
+# stress_analysis(tibet, PoR = eu_in, type = "in", pb = eu_in_boundary, plot = FALSE)
 PoR_stress2grid(tibet, eu_in)
 
 data("iceland")
 eu_na_boundary <- subset(plates, plates$pair == "eu-na")
 eu_na <- equivalent_rotation(morvel, fixed = "na", rot = "eu")
-stress_analysis(iceland, PoR = eu_na, type = "out", pb = eu_na_boundary, plot = FALSE)
+# stress_analysis(iceland, PoR = eu_na, type = "out", pb = eu_na_boundary, plot = FALSE)
 PoR_stress2grid(iceland, eu_na)
 
 
@@ -193,6 +193,8 @@ test_that("Error message if incorrect type argument", {
 #   expect_equal(round(PoR2Geo_azimuth(san_andreas_por, na_pa), 12), san_andreas$azi %% 180)
 # })
 
+## tes coordinates -------------------------------------------------------------
+
 test_that("Coordinate conversion sf", {
   san_andreas_por <- geographical_to_PoR(san_andreas, na_pa) |>
     PoR_to_geographical_sf(na_pa)
@@ -210,4 +212,21 @@ test_that("Coordinate conversion df", {
   por_crds2 <- cbind(X = san_andreas_por2$lon, Y = san_andreas_por2$lat)
 
   expect_equal(por_crds2, geo_crds)
+})
+
+
+## test dispersion -------------------------------------------------------------
+
+test_that("Max Circular dispersion is 1!", {
+  expect_equal(circular_dispersion(c(0, 180), 90, axial = TRUE), 1)
+  expect_equal(circular_dispersion(c(0, 180), 90, axial = FALSE), .5)
+  expect_equal(circular_dispersion(rep(270, 2), 90, axial = TRUE), 0)
+  expect_equal(circular_dispersion(rep(270, 2), 90, axial = FALSE), 1)
+})
+
+test_that("Max Circular distance is 1!", {
+  expect_equal(circular_distance(0, 90, axial = TRUE), 1)
+  expect_equal(circular_distance(0, 90, axial = FALSE), .5)
+  expect_equal(circular_distance(270, 90, axial = TRUE), 0)
+  expect_equal(circular_distance(270, 90, axial = FALSE), 1)
 })

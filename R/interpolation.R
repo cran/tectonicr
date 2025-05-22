@@ -19,7 +19,7 @@ wcmean <- function(x, w) {
       sqrt(-2 * log(meanR))
     }
     mean_s <- atan2(m["S"], m["C"]) / 2
-    rad2deg(c(mean_s, sd_s)) %% 180
+    unname(rad2deg(c(mean_s, sd_s)) %% 180)
   } else {
     c(NA, NA)
   }
@@ -38,26 +38,37 @@ wcmedian <- function(x, w) {
   } else {
     median_s <- iqr_s <- NA
   }
-  c(median_s, iqr_s)
+  unname(c(median_s, iqr_s))
 }
 
 #' @keywords internal
-dist_weight_linear <- function(R_search, dist_threshold, distij, idp = 0) {
+dist_weighting_linear <- function(R_search, dist_threshold, distij, idp = 0) {
   dist_threshold_scal <- R_search * dist_threshold
   R_search + 1 - max(dist_threshold_scal, distij)
 }
 
 #' @keywords internal
-dist_weight_inverse <- function(R_search, dist_threshold, distij, idp = 0) {
+dist_weighting_inverse <- function(R_search, dist_threshold, distij, idp = 0) {
   dist_threshold_scal <- R_search * dist_threshold
   1 / (max(dist_threshold_scal, distij))^idp
 }
 
+#' Indices of n smallest values in array
+#' @keywords internal
+which.nsmallest <- function(x, n) {
+  # n <- min(c(length(x), Inf))
+  # nsmallest <- sort(x)[1:n]
+  nsmallest <- utils::head(sort(x), n)
+
+  which(x %in% nsmallest)
+}
 
 #' Spatial Interpolation of SHmax
 #'
 #' Stress field interpolation and wavelength analysis using a kernel (weighted)
-#' mean/median and standard deviation/IQR of stress data
+#' mean/median and standard deviation/IQR of stress data.
+#' Parameters can be adjusted to have inverse-distance-weighting (IDW) or
+#' nearest-neighbor interpolations (NN).
 #'
 #' @param x `sf` object containing
 #' \describe{
@@ -73,27 +84,40 @@ dist_weight_inverse <- function(R_search, dist_threshold, distij, idp = 0) {
 #' degree. Default is `2.5`. (is ignored if `grid` is specified)
 #' @param stat whether the direction of interpolated SHmax is based on the
 #' circular mean and standard deviation (`"mean"`, the default) or the
-#' circular median and interquartile range (`"median"`)
-#' @param min_data integer. Minimum number of data per bin. Default is `3` for
-#' [stress2grid()]and `4` for [stress2grid_stats()].
-#' @param threshold numeric. Threshold for deviation of direction. Default is
-#' `25`
-#' @param arte_thres numeric. Maximum distance (in km) of the grid point to the
-#' next data point. Default is `200`
-#' @param dist_weight Distance weighting method which should be used. One of
+#' quasi-circular median and quasi-interquartile range (`"median"`).
+#' @param min_data integer. If the number of observations within distance
+#' `R_range` is less than `min_data`, a missing value `NA` will be generated.
+#' Default is `3` for [stress2grid()] and `4` for [stress2grid_stats()].
+#' @param max_data integer. The number of nearest observations that should be
+#' used for prediction, where "nearest" is defined in terms of the space of the
+#' spatial locations. Default is `Inf`.
+#' @param max_sd numeric. Threshold for deviation of direction in degrees;
+#' if exceeds, missing values will be generated.
+#' @param threshold `r lifecycle::badge("deprecated")` is no
+#'   longer supported; use `max_sd` instead.
+#' @param min_dist_threshold numeric. Distance threshold for smallest distance
+#' of the prediction location to the next observation location.
+#' Default is `200` km.
+#' @param arte_thres `r lifecycle::badge("deprecated")` is no
+#'   longer supported; use `min_dist_threshold` instead.
+#' @param dist_weighting Distance weighting method which should be used. One of
 #' `"none"`, `"linear"`, or `"inverse"` (the default).
 #' @param idp,qp,mp numeric. The weighting power of inverse distance, quality
-#' and method. Default is `1`. The higher the value, the more weight it will
-#' put. When set to `0`, no weighting is applied. `idp` is only effective if
-#' inverse distance weighting (`dist_weight="inverse"`) is applied.
+#' and method (the higher the value, the more weight).
+#' Default is `1`. When set to `0`, no weighting is applied. Only effective when
+#' `dist_weighting=="inverse"`.
 #' @param dist_threshold numeric. Distance weight to prevent overweight of data
 #' nearby (0 to 1). Default is `0.1`
 #' @param method_weighting logical. If a method weighting should be applied:
 #' Default is `FALSE`. If `FALSE`, overwrites `mp`.
 #' @param quality_weighting logical. If a quality weighting should be applied:
 #' Default is `TRUE`. If `FALSE`, overwrites `qp`.
-#' @param R_range numeric value or vector specifying the kernel half-width(s),
-#' i.e. the search radius (in km). Default is `seq(50, 1000, 50)`
+#' @param R_range numeric value or vector specifying the kernel half-width(s)
+#' search radii,
+#' i.e. the maximum distance from the prediction location to be used for
+#' prediction (in km). Default is `seq(50, 1000, 50)`. If combined with
+#' `max_data`, both criteria apply.
+#' @param mode logical. Should the circular mode be included in the statistical summary (slow)?
 #' @param kappa  numeric. von Mises distribution concentration parameter used
 #' for the circular mode. Will be estimated using [est.kappa()] if not provided.
 #' @param ... (optional) arguments to [dist_greatcircle()]
@@ -104,24 +128,26 @@ dist_weight_inverse <- function(R_search, dist_threshold, distij, idp = 0) {
 #' @returns `sf` object containing
 #' \describe{
 #' \item{lon,lat}{longitude and latitude in degrees}
-#' \item{azi}{Mean SHmax in degree}
-#' \item{sd}{Standard deviation of SHmax in degrees}
+#' \item{azi}{Mean od median SHmax in degree}
+#' \item{sd}{Standard deviation or Quasi-IQR of SHmax in degrees}
 #' \item{R}{Search radius in km}
-#' \item{mdr}{Mean distance of datapoints per search radius}
+#' \item{mdr}{Mean distance between grid point and datapoints per search radius}
 #' \item{N}{Number of data points in search radius}
 #' }
 #' When [stress2grid_stats()], `azi` and `sd` are replaced by the output of
 #' [circular_summary()].
 #'
-#' @details [stress2grid()] is a modified version of the MATLAB script
-#' "stress2grid" by Ziegler and Heidbach (2019).
-#' [stress2grid_stats()] is based on [stress2grid()] but yields more circular
+#' @details [stress2grid()] is originally based on the MATLAB script
+#' "stress2grid" by Ziegler and Heidbach (2019):
+#' \url{https://github.com/MorZieg/Stress2Grid}.
+#' The tectonicr version has been significantly modified to provide better
+#' performance and more flexibility.
+#'
+#' [stress2grid_stats()] is based on [stress2grid()] but calculates circular
 #' summary statistics (see [circular_summary()]).
 #'
 #' @seealso [dist_greatcircle()], [PoR_stress2grid()], [compact_grid()],
 #' [circular_mean()], [circular_median()], [circular_sd()], [circular_summary()]
-#'
-#' @source \url{https://github.com/MorZieg/Stress2Grid}
 #'
 #' @references Ziegler, M. and Heidbach, O. (2019).
 #' Matlab Script Stress2Grid v1.1. GFZ Data Services. \doi{10.5880/wsm.2019.002}
@@ -130,190 +156,20 @@ dist_weight_inverse <- function(R_search, dist_threshold, distij, idp = 0) {
 #'
 #' @examples
 #' data("san_andreas")
-#' stress2grid(san_andreas, stat = "median")
+#'
+#' # Inverse Distance Weighting interpolation:
+#' stress2grid(san_andreas, stat = "median") |> head()
+#'
+#' # Nearest Neighbor interpolation:
+#' stress2grid(san_andreas, stat = "median", max_data = 5) |> head()
+#'
 #' \dontrun{
-#' stress2grid_stats(san_andreas)
+#' stress2grid_stats(san_andreas) |> head()
 #' }
 NULL
 
 #' @rdname stress2grid
 #' @export
-# stress2grid <- function(x,
-#                         stat = c("mean", "median"),
-#                         grid = NULL,
-#                         lon_range = NULL,
-#                         lat_range = NULL,
-#                         gridsize = 2,
-#                         min_data = 3L,
-#                         threshold = 25,
-#                         arte_thres = 200,
-#                         method_weighting = FALSE,
-#                         quality_weighting = TRUE,
-#                         dist_weight = c("inverse", "linear", "none"),
-#                         idp = 1,
-#                         qp = 1,
-#                         mp = 1,
-#                         dist_threshold = 0.1,
-#                         R_range = seq(50, 1000, 50),
-#                         ...) {
-#   stopifnot(
-#     inherits(x, "sf"), is.numeric(gridsize), is.numeric(threshold), is.numeric(arte_thres),
-#     arte_thres > 0, is.numeric(dist_threshold), is.numeric(R_range), is.logical(method_weighting),
-#     is.logical(quality_weighting), is.numeric(idp), is.numeric(qp), is.numeric(mp)
-#   )
-#
-#   min_data <- as.integer(ceiling(min_data))
-#
-#   dist_weight <- match.arg(dist_weight)
-#   if (dist_weight == "linear") {
-#     w_distance_fun <- dist_weight_linear
-#   } else {
-#     w_distance_fun <- dist_weight_inverse
-#   }
-#
-#   stat <- match.arg(stat)
-#   if (stat == "median") {
-#     stats_fun <- wcmedian
-#   } else {
-#     stats_fun <- wcmean
-#   }
-#
-#   colnames_x <- colnames(x)
-#
-#   if (quality_weighting & "unc" %in% colnames_x) {
-#     x <- subset(x, !is.na(unc))
-#   }
-#
-#   # pre-allocating
-#   azi <- x$azi
-#   length_azi <- length(azi)
-#   unc <- lat <- lon <- numeric(length_azi)
-#   type <- character(9)
-#   num_r <- length(R_range)
-#
-#
-#   if (!quality_weighting) qp <- 0
-#   if (!method_weighting) mp <- 0
-#   if (dist_weight == "none") idp <- 0
-#
-#   # WSM method weighting (from 0 to 5)
-#   if ("type" %in% colnames_x) {
-#     parse_method <- setNames(
-#       c(4, 5, 5, 5, 4, 5, 4, 2, 1) / 5,
-#       c("FMS", "FMF", "BO", "DIF", "HF", "GF", "GV", "OC", NA)
-#     )
-#     w_method <- parse_method[x$type]
-#   } else {
-#     w_method <- rep(1, length_azi)
-#   }
-#
-#   w_quality <- if ("unc" %in% colnames_x) {
-#     1 / x$unc
-#   } else {
-#     rep(1, length_azi)
-#   }
-#
-#   x_coords <- sf::st_coordinates(x)
-#
-#   datas <- cbind(
-#     lon = x_coords[, 1],
-#     lat = x_coords[, 2],
-#     azi = azi,
-#     w_method = ifelse(is.na(w_method), 1 / 5, w_method)^mp,
-#     w_quality = w_quality^qp
-#   )
-#
-#   if (is.null(grid)) {
-#     # Regular grid
-#     if (is.null(lon_range) || is.null(lat_range)) {
-#       lon_range <- range(datas[, 1], na.rm = TRUE)
-#       lat_range <- range(datas[, 2], na.rm = TRUE)
-#     }
-#
-#     grid <- sf::st_bbox(
-#       c(
-#         xmin = lon_range[1],
-#         xmax = lon_range[2],
-#         ymin = lat_range[1],
-#         ymax = lat_range[2]
-#       ),
-#       crs = sf::st_crs("WGS84")
-#     ) |>
-#       sf::st_make_grid(
-#         cellsize = gridsize,
-#         what = "centers",
-#         offset = c(lon_range[1], lat_range[1])
-#       ) |>
-#       sf::st_as_sf()
-#   }
-#   stopifnot(inherits(grid, "sf"), any(sf::st_is(grid, "POINT")))
-#   G <- sf::st_coordinates(grid)
-#   num_G <- nrow(G)
-#   R <- N <- numeric(num_G)
-#   R_seq <- seq_along(R_range)
-#   nR <- length(R_seq)
-#
-#   # SH <- matrix(nrow = num_G * length(R_range), ncol = 7, dimnames = list(NULL, c('lon', 'lat', 'azi', 'sd', 'R', 'mdr', 'N')))
-#   # SH[, 1] <- rep(G[, 1], length(R_range))
-#   # SH[, 2] <- rep(G[, 2], length(R_range))
-#   SH <- matrix(nrow = 0, ncol = 7, dimnames = list(NULL, c("lon", "lat", "azi", "sd", "R", "md", "N")))
-#
-#   for (i in seq_along(G[, 1])) {
-#     distij <- dist_greatcircle(G[i, 2], G[i, 1], datas[, 2], datas[, 1], ...)
-#
-#     if (min(distij) <= arte_thres) {
-#       SH_i <- matrix(nrow = nR, ncol = 7, dimnames = list(NULL, c("lon", "lat", "azi", "sd", "R", "md", "N")))
-#
-#       for (k in R_seq) {
-#         R_search <- R_range[k]
-#         # ids_R <- which(distij <= R_search) # select those that are in search radius
-#         # N_in_R <- length(ids_R)
-#         ids_R <- (distij <= R_search) # select those that are in search radius
-#         N_in_R <- sum(ids_R)
-#
-#         if (N_in_R < min_data) {
-#           # not enough data within search radius
-#           sd <- 0
-#           meanSH <- md <- NA
-#         } else if (N_in_R == 1) {
-#           sd <- 0
-#           meanSH <- datas[ids_R, 3]
-#           md <- distij[ids_R]
-#         } else {
-#           md <- mean(distij[ids_R], na.rm = TRUE)
-#
-#           # distance weighting
-#           w_distance <- w_distance_fun(R_search, dist_threshold, distij[ids_R], idp)
-#
-#           w <- w_distance * datas[ids_R, 5] * datas[ids_R, 4]
-#
-#           # mean value
-#           stats <- stats_fun(x = datas[ids_R, 3], w = w)
-#           meanSH <- stats[1]
-#           sd <- stats[2]
-#         }
-#         SH_i[k, ] <- c(
-#           G[i, 1], # lon
-#           G[i, 2], # lat
-#           meanSH, # azi
-#           sd, # sd
-#           R_search, # R_search
-#           md, # mdr
-#           N_in_R # N_in_R
-#         )
-#       }
-#       SH <- rbind(SH, SH_i)
-#     }
-#   }
-#
-#   res <- dplyr::as_tibble(SH) |>
-#     dplyr::mutate(N = as.integer(N), sd = sd / 2, mdr = md / R) |>
-#     dplyr::select(-md) |>
-#     dplyr::filter(!is.na(azi), sd <= threshold, !is.na(sd)) |>
-#     sf::st_as_sf(coords = c("lon", "lat"), crs = sf::st_crs(x), remove = FALSE)
-#
-#   return(res)
-# }
 stress2grid <- function(x,
                         stat = c("mean", "median"),
                         grid = NULL,
@@ -321,11 +177,14 @@ stress2grid <- function(x,
                         lat_range = NULL,
                         gridsize = 2,
                         min_data = 3L,
-                        threshold = 25,
-                        arte_thres = 200,
+                        max_data = Inf,
+                        max_sd = Inf,
+                        threshold = deprecated(),
+                        min_dist_threshold = 200,
+                        arte_thres = deprecated(),
                         method_weighting = FALSE,
                         quality_weighting = TRUE,
-                        dist_weight = c("inverse", "linear", "none"),
+                        dist_weighting = c("inverse", "linear", "none"),
                         idp = 1,
                         qp = 1,
                         mp = 1,
@@ -333,18 +192,48 @@ stress2grid <- function(x,
                         R_range = seq(50, 1000, 50),
                         ...) {
   stopifnot(
-    inherits(x, "sf"), is.numeric(gridsize), is.numeric(threshold), is.numeric(arte_thres),
-    arte_thres > 0, is.numeric(dist_threshold), is.numeric(R_range), is.logical(method_weighting),
-    is.logical(quality_weighting), is.numeric(idp), is.numeric(qp), is.numeric(mp)
+    inherits(x, "sf"),
+    is.numeric(gridsize),
+    is.numeric(max_sd) | is.infinite(max_sd),
+    is.numeric(max_data) | is.infinite(max_data),
+    is.numeric(min_data) | is.infinite(min_data),
+    max_data >= min_data,
+    is.numeric(min_dist_threshold),
+    is.numeric(dist_threshold),
+    min_dist_threshold > 0,
+    is.numeric(R_range),
+    is.logical(method_weighting),
+    is.logical(quality_weighting),
+    is.numeric(idp),
+    is.numeric(qp),
+    is.numeric(mp)
   )
+
+  if (lifecycle::is_present(arte_thres)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.6.9002",
+      what = "stress2grid(arte_thres)",
+      details = "Ability to specify arte_thres will be dropped in next release."
+    )
+  }
+  arte_thres <- min_dist_threshold
+
+  if (lifecycle::is_present(threshold)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.6.9002",
+      what = "stress2grid(threshold)",
+      details = "Ability to specify threshold will be dropped in next release."
+    )
+  }
+  threshold <- max_sd
 
   min_data <- as.integer(ceiling(min_data))
 
-  dist_weight <- match.arg(dist_weight)
-  if (dist_weight == "linear") {
-    w_distance_fun <- dist_weight_linear
+  dist_weighting <- match.arg(dist_weighting)
+  if (dist_weighting == "linear") {
+    w_distance_fun <- dist_weighting_linear
   } else {
-    w_distance_fun <- dist_weight_inverse
+    w_distance_fun <- dist_weighting_inverse
   }
 
   stat <- match.arg(stat)
@@ -370,7 +259,7 @@ stress2grid <- function(x,
 
   if (!quality_weighting) qp <- 0
   if (!method_weighting) mp <- 0
-  if (dist_weight == "none") idp <- 0
+  if (dist_weighting == "none") idp <- 0
 
   # WSM method weighting (from 0 to 5)
   if ("type" %in% colnames_x) {
@@ -423,24 +312,27 @@ stress2grid <- function(x,
       sf::st_as_sf()
   }
   stopifnot(inherits(grid, "sf"), any(sf::st_is(grid, "POINT")))
-  G <- sf::st_coordinates(grid)
+  G <- unname(sf::st_coordinates(grid))
   R_seq <- seq_along(R_range)
 
   SH_t <- sapply(seq_along(G[, 1]), function(i) {
     distij <- dist_greatcircle(G[i, 2], G[i, 1], datas[, 2], datas[, 1])
+    if (max_data < Inf) distij <- distij[which.nsmallest(distij, max_data)] # select the `max_data` nearest locations
 
-    if (min(distij) <= arte_thres) {
-      t(sapply(R_seq, function(k) {
+    # min_dist_thresholdij <- min(c(max(distij), min_dist_threshold))
+
+    if (min(distij) <= min_dist_threshold) {
+      t(vapply(R_seq, function(k) {
         R_search <- R_range[k]
         ids_R <- (distij <= R_search) # select those that are in search radius
         N_in_R <- sum(ids_R)
 
         if (N_in_R < min_data) {
           # not enough data within search radius
-          sd <- 0
+          sdSH <- 0
           meanSH <- md <- NA
         } else if (N_in_R == 1) {
-          sd <- 0
+          sdSH <- 0
           meanSH <- datas[ids_R, 3]
           md <- distij[ids_R]
         } else {
@@ -454,28 +346,28 @@ stress2grid <- function(x,
           # mean value
           stats <- stats_fun(x = datas[ids_R, 3], w = w)
           meanSH <- stats[1]
-          sd <- stats[2]
+          sdSH <- stats[2]
         }
+
         c(
-          G[i, 1], # lon
-          G[i, 2], # lat
-          meanSH, # azi
-          sd, # sd
-          R_search, # R_search
-          md, # mdr
-          N_in_R # N_in_R
+          lon = G[i, 1], # lon
+          lat = G[i, 2], # lat
+          azi = meanSH, # azi
+          sd = sdSH, # sd
+          R = R_search, # R_search
+          md = md, # mdr
+          N = N_in_R # N_in_R
         )
-      }))
+      }, FUN.VALUE = numeric(7)))
     }
   })
 
   do.call(rbind, SH_t) |>
     as.data.frame() |>
-    setNames(c("lon", "lat", "azi", "sd", "R", "md", "N")) |>
     dplyr::as_tibble() |>
-    dplyr::mutate(N = as.integer(N), sd = sd / 2, mdr = md / R) |>
+    dplyr::mutate(N = as.integer(N), mdr = md / R) |>
     dplyr::select(-md) |>
-    dplyr::filter(!is.na(azi), sd <= threshold, !is.na(sd)) |>
+    dplyr::filter(!is.na(azi), sd <= max_sd, !is.na(sd)) |>
     sf::st_as_sf(coords = c("lon", "lat"), crs = sf::st_crs(x), remove = FALSE)
 }
 
@@ -488,31 +380,66 @@ stress2grid_stats <- function(x,
                               lat_range = NULL,
                               gridsize = 2,
                               min_data = 4L,
-                              threshold = 25,
-                              arte_thres = 200,
+                              max_data = Inf,
+                              threshold = deprecated(),
+                              min_dist_threshold = 200,
+                              arte_thres = deprecated(),
                               method_weighting = FALSE,
                               quality_weighting = TRUE,
-                              dist_weight = c("inverse", "linear", "none"),
+                              dist_weighting = c("inverse", "linear", "none"),
                               idp = 1,
                               qp = 1,
                               mp = 1,
                               dist_threshold = 0.1,
                               R_range = seq(50, 1000, 50),
-                              kappa = NULL,
+                              mode = FALSE,
+                              kappa = 10,
                               ...) {
   stopifnot(
-    inherits(x, "sf"), is.numeric(gridsize), is.numeric(threshold), is.numeric(arte_thres),
-    arte_thres > 0, is.numeric(dist_threshold), is.numeric(R_range), is.logical(method_weighting),
-    is.logical(quality_weighting), is.numeric(idp), is.numeric(qp), is.numeric(mp)
+    inherits(x, "sf"),
+    is.numeric(gridsize),
+    is.numeric(min_dist_threshold),
+    min_dist_threshold > 0,
+    is.numeric(max_data) | is.infinite(max_data),
+    is.numeric(min_data) | is.infinite(min_data),
+    max_data >= min_data,
+    is.numeric(dist_threshold),
+    is.numeric(R_range),
+    is.logical(method_weighting),
+    is.logical(quality_weighting),
+    is.numeric(idp),
+    is.numeric(qp),
+    is.numeric(mp),
+    is.logical(mode)
   )
+
+  if (lifecycle::is_present(arte_thres)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.6.9002",
+      what = "stress2grid_stats(arte_thres)",
+      details = "Ability to specify arte_thres will be dropped in next release."
+    )
+  }
+  arte_thres <- min_dist_threshold
+
+  if (lifecycle::is_present(threshold)) {
+    lifecycle::deprecate_warn(
+      when = "0.4.6.9002",
+      what = "stress2grid_stats(threshold)",
+      details = "Ability to specify threshold will be dropped in next release."
+    )
+  }
+  # threshold <- max_sd
+
+
 
   min_data <- as.integer(ceiling(min_data))
 
-  dist_weight <- match.arg(dist_weight)
-  if (dist_weight == "linear") {
-    w_distance_fun <- dist_weight_linear
+  dist_weighting <- match.arg(dist_weighting)
+  if (dist_weighting == "linear") {
+    w_distance_fun <- dist_weighting_linear
   } else {
-    w_distance_fun <- dist_weight_inverse
+    w_distance_fun <- dist_weighting_inverse
   }
 
   colnames_x <- colnames(x)
@@ -532,7 +459,7 @@ stress2grid_stats <- function(x,
 
   if (!quality_weighting) qp <- 0
   if (!method_weighting) mp <- 0
-  if (dist_weight == "none") idp <- 0
+  if (dist_weighting == "none") idp <- 0
 
   # WSM method weighting (from 0 to 5)
   if ("type" %in% colnames_x) {
@@ -594,15 +521,19 @@ stress2grid_stats <- function(x,
 
   cols <- c(
     "lon", "lat", "n", "mean", "sd", "var",
-    "25%", "quasi-median", "75%", "median", "mode", "95%CI",
+    "25%", "quasi-median", "75%", "median", "CI",
     "skewness", "kurtosis", "meanR", "R", "md", "N"
   )
+  if (mode) {
+    cols <- append(cols, "mode", after = 10)
+  }
 
   SH <- sapply(seq_along(G[, 1]), function(i) {
     distij <- dist_greatcircle(G[i, 2], G[i, 1], datas[, 2], datas[, 1], ...)
+    distij <- distij[which.nsmallest(distij, max_data)] # select the `max_data` nearest locations
 
-    if (min(distij) <= arte_thres) {
-      t(sapply(R_seq, function(k) {
+    if (min(distij) <= min_dist_threshold) {
+      t(vapply(R_seq, function(k) {
         R_search <- R_range[k]
         ids_R <- (distij <= R_search) # select those that are in search radius
         N_in_R <- sum(ids_R)
@@ -624,17 +555,17 @@ stress2grid_stats <- function(x,
           w <- w_distance * datas[ids_R, 5] * datas[ids_R, 4]
 
           # mean value
-          stats <- circular_summary(x = datas[ids_R, 3], w = w, axial = TRUE, kappa = kappa, na.rm = TRUE) |> unname()
+          stats <- circular_summary(x = datas[ids_R, 3], w = w, axial = TRUE, mode = mode, kappa = kappa, na.rm = TRUE) |> unname()
         }
         c(
-          G[i, 1], # lon
-          G[i, 2], # lat
+          lon = G[i, 1], # lon
+          lat = G[i, 2], # lat
           stats,
-          R_search, # R_search
-          md, # mdr
-          N_in_R # N_in_R
+          R = R_search, # R_search
+          md = md, # mdr
+          N = N_in_R # N_in_R
         )
-      }))
+      }, FUN.VALUE = numeric(length(cols))))
     }
   })
 
@@ -643,7 +574,7 @@ stress2grid_stats <- function(x,
     setNames(cols) |>
     dplyr::as_tibble() |>
     dplyr::mutate(N = as.integer(N), mdr = md / R) |>
-    dplyr::select(-md, -n) |>
+    dplyr::select(-c(md, n)) |>
     sf::st_as_sf(coords = c("lon", "lat"), crs = sf::st_crs(x), remove = FALSE)
 }
 
@@ -699,10 +630,10 @@ stress2grid_stats <- function(x,
 #' data("san_andreas")
 #' data("nuvel1")
 #' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
-#' PoR_stress2grid(san_andreas, PoR)
+#' PoR_stress2grid(san_andreas, PoR) |> head()
 #'
 #' \dontrun{
-#' PoR_stress2grid_stats(san_andreas, PoR)
+#' PoR_stress2grid_stats(san_andreas, PoR, mode = TRUE) |> head()
 #' }
 NULL
 
@@ -817,7 +748,12 @@ PoR_stress2grid_stats <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_rang
   x_PoR$azi <- PoR_shmax(x, PoR)
 
   int <- stress2grid_stats(x_PoR, grid = grid_PoR, lon_range = lon_range, lat_range = lat_range, gridsize = gridsize, ...) |>
-    dplyr::rename(mean.PoR = mean, `25%.PoR` = `25%`, `quasi-median.PoR` = `quasi-median`, `75%.PoR` = `75%`, median.PoR = median, mode.PoR = mode, lat.PoR = lat, lon.PoR = lon) |>
+    dplyr::rename(
+      mean.PoR = mean, `25%.PoR` = `25%`, `quasi-median.PoR` = `quasi-median`,
+      `75%.PoR` = `75%`, median.PoR = median,
+      "mode.PoR" = dplyr::matches("mode"),
+      lat.PoR = lat, lon.PoR = lon
+    ) |>
     PoR_to_geographical_sf(PoR)
   int_coords <- sf::st_coordinates(int) |>
     dplyr::as_tibble() |>
@@ -829,7 +765,7 @@ PoR_stress2grid_stats <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_rang
   int$`quasi-median` <- PoR2Geo_azimuth(int |> rename(azi.PoR = `quasi-median.PoR`), PoR)
   int$`75%` <- PoR2Geo_azimuth(int |> rename(azi.PoR = `75%.PoR`), PoR)
   int$median <- PoR2Geo_azimuth(int |> rename(azi.PoR = median.PoR), PoR)
-  int$mode <- PoR2Geo_azimuth(int |> rename(azi.PoR = mode.PoR), PoR)
+  if ("mode.PoR" %in% colnames(int)) int$mode <- PoR2Geo_azimuth(int |> rename(azi.PoR = mode.PoR), PoR)
   return(int)
 }
 
@@ -864,7 +800,7 @@ PoR_stress2grid_stats <- function(x, PoR, grid = NULL, PoR_grid = TRUE, lon_rang
 #' @examples
 #' data("san_andreas")
 #' res <- stress2grid(san_andreas)
-#' compact_grid(res)
+#' compact_grid(res) |> head()
 #'
 #' \dontrun{
 #' res2 <- stress2grid_stats(san_andreas)
@@ -925,9 +861,13 @@ compact_grid2 <- function(x, ..., FUN = min) {
 #' `"dispersion"` (default), `"nchisq"`, or `"rayleigh"` for circular
 #' dispersion, normalized Chi-squared test statistic, or Rayleigh test
 #' statistic.
+#' @param stat_threshold numeric. Generates missing values when the kernel
+#' `stat` value exceeds this threshold. Default is `Inf`.
 #' @param min_data Integer. Minimum number of data per bin. Default is `3`
-#' @param threshold Numeric. Threshold for stat value (default is `1`)
-#' @param arte_thres Numeric. Maximum distance (in km) of the grid point to the
+#' @param max_data integer. The number of nearest observations that should be
+#' used for prediction, where "nearest" is defined in terms of the space of the
+#' spatial locations. Default is `Inf`.
+#' @param min_dist_threshold Numeric. Maximum distance (in km) of the grid point to the
 #' next data point. Default is 200
 #' @param dist_threshold Numeric. Distance weight to prevent overweight of data
 #' nearby (`0` to `1`). Default is `0.1`
@@ -961,7 +901,7 @@ compact_grid2 <- function(x, ..., FUN = min) {
 #' san_andreas_por <- san_andreas
 #' san_andreas_por$azi <- PoR_shmax(san_andreas, PoR, "right")$azi.PoR
 #' san_andreas_por$prd <- 135
-#' kernel_dispersion(san_andreas_por)
+#' kernel_dispersion(san_andreas_por) |> head()
 NULL
 
 #' @rdname kernel_dispersion
@@ -972,15 +912,18 @@ kernel_dispersion <- function(x,
                               lon_range = NULL,
                               lat_range = NULL,
                               gridsize = 2.5,
-                              min_data = 3,
-                              threshold = 1,
-                              arte_thres = 200,
+                              min_data = 3L,
+                              max_data = Inf,
+                              min_dist_threshold = 200,
                               dist_threshold = 0.1,
+                              stat_threshold = Inf,
                               R_range = seq(100, 2000, 100),
                               ...) {
   stopifnot(
-    inherits(x, "sf"), is.numeric(gridsize), is.numeric(threshold), is.numeric(arte_thres),
-    arte_thres > 0, is.numeric(dist_threshold), is.numeric(R_range)
+    inherits(x, "sf"), is.numeric(gridsize), is.numeric(min_data), is.numeric(min_dist_threshold),
+    min_dist_threshold > 0, is.numeric(dist_threshold), is.numeric(R_range),
+    is.numeric(stat_threshold) | is.infinite(stat_threshold),
+    max_data >= min_data
   )
   stat <- match.arg(stat)
   min_data <- as.integer(ceiling(min_data))
@@ -1033,8 +976,7 @@ kernel_dispersion <- function(x,
       sf::st_as_sf()
   }
   stopifnot(inherits(grid, "sf"), any(sf::st_is(grid, "POINT")))
-  G <- grid |>
-    sf::st_coordinates()
+  G <- unname(sf::st_coordinates(grid))
 
   # R <- N <- numeric(nrow(G))
   R_seq <- seq_along(R_range)
@@ -1045,9 +987,10 @@ kernel_dispersion <- function(x,
   SH <- sapply(seq_along(G[, 1]), function(i) {
     # for (i in seq_along(G[, 1])) {
     distij <- dist_greatcircle(G[i, 2], G[i, 1], datas[, "lat"], datas[, "lon"], ...)
+    if (max_data < Inf) distij <- distij[which.nsmallest(distij, max_data)] # select the `max_data` nearest locations
 
-    if (min(distij) <= arte_thres) {
-      t(sapply(R_seq, function(k) {
+    if (min(distij) <= min_dist_threshold) {
+      t(vapply(R_seq, function(k) {
         R_search <- R_range[k]
         ids_R <- which(distij <= R_search)
         N_in_R <- length(ids_R)
@@ -1071,22 +1014,26 @@ kernel_dispersion <- function(x,
         }
 
         c(
-          G[i, 1],
-          G[i, 2],
-          y,
-          R_search,
-          md,
-          N_in_R
+          lon = G[i, 1],
+          lat = G[i, 2],
+          stat = y,
+          R = R_search,
+          md = md,
+          N = N_in_R
         )
-      }))
+      }, FUN.VALUE = numeric(6)))
     }
   })
 
   do.call(rbind, SH) |>
     as.data.frame() |>
-    setNames(c("lon", "lat", "stat", "R", "md", "N")) |>
+    # setNames(c("lon", "lat", "stat", "R", "md", "N")) |>
     dplyr::as_tibble() |>
-    dplyr::mutate(N = as.integer(N), mdr = md / R) |>
+    dplyr::mutate(
+      N = as.integer(N),
+      mdr = md / R,
+      stat = ifelse(stat >= stat_threshold, NA, stat)
+    ) |>
     dplyr::select(-md) |>
     sf::st_as_sf(coords = c("lon", "lat"), crs = sf::st_crs(x), remove = FALSE)
 }

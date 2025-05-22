@@ -99,10 +99,10 @@ norm_chisq <- function(obs, prd, unc) {
 #'
 #' @details \describe{
 #' \item{\eqn{H_0}{H0}:}{angles are randomly distributed around the circle.}
-#' \item{\eqn{H_1}{H1}:}{angles are from unimodal distribution with unknown mean
+#' \item{\eqn{H_1}{H1}:}{angles are from non-uniformly distribution with unknown mean
 #' direction and mean resultant length (when `mu` is `NULL`. Alternatively (when
 #' `mu` is specified),
-#' angles are uniformly distributed around a specified direction.}
+#' angles are non-uniformly distributed around a specified direction.}
 #' }
 #' If `statistic > p.value`, the null hypothesis is rejected,
 #' i.e. the length of the mean resultant differs significantly from zero, and
@@ -140,7 +140,7 @@ norm_chisq <- function(obs, prd, unc) {
 #' @export
 #'
 #' @examples
-#' # Example data from Mardia and Jupp (2001), pp. 93
+#' # Example data from Mardia and Jupp (1999), pp. 93
 #' pidgeon_homing <- c(55, 60, 65, 95, 100, 110, 260, 275, 285, 295)
 #' rayleigh_test(pidgeon_homing, axial = FALSE)
 #'
@@ -154,7 +154,7 @@ norm_chisq <- function(obs, prd, unc) {
 #' rayleigh_test(finland_stria, axial = FALSE)
 #' rayleigh_test(finland_stria, mu = 105, axial = FALSE)
 #'
-#' # Example data from Mardia and Jupp (2001), pp. 99
+#' # Example data from Mardia and Jupp (1999), pp. 99
 #' atomic_weight <- c(
 #'   rep(0, 12), rep(3.6, 1), rep(36, 6), rep(72, 1),
 #'   rep(108, 2), rep(169.2, 1), rep(324, 1)
@@ -373,7 +373,7 @@ weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE, quiet = FALS
 #' @export
 #'
 #' @examples
-#' # Example data from Mardia and Jupp (2001), pp. 93
+#' # Example data from Mardia and Jupp (1999), pp. 93
 #' pidgeon_homing <- c(55, 60, 65, 95, 100, 110, 260, 275, 285, 295)
 #' kuiper_test(pidgeon_homing, alpha = .05)
 #'
@@ -459,13 +459,13 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE, quiet = FALSE) {
 #' If `statistic > p.value`, the null hypothesis is rejected.
 #' If not, randomness (uniform distribution) cannot be excluded.
 #'
-#' @references Mardia and Jupp (2000). Directional Statistics. John Wiley and
+#' @references Mardia and Jupp (1999). Directional Statistics. John Wiley and
 #' Sons.
 #'
 #' @export
 #'
 #' @examples
-#' # Example data from Mardia and Jupp (2001), pp. 93
+#' # Example data from Mardia and Jupp (1999), pp. 93
 #' pidgeon_homing <- c(55, 60, 65, 95, 100, 110, 260, 275, 285, 295)
 #' watson_test(pidgeon_homing, alpha = .05)
 #'
@@ -768,7 +768,8 @@ A1inv <- function(x) {
 #' @param bias logical parameter determining whether a bias correction is used
 #' in the computation of the MLE. Default for bias is `FALSE` for no bias
 #' correction.
-#' @param ... optional parameters passed to `circular_mean()`
+#' @param axial logical. Whether the data are axial, i.e. pi-periodical
+#' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
 #'
 #' @returns numeric.
 #' @export
@@ -776,11 +777,16 @@ A1inv <- function(x) {
 #' @examples
 #' set.seed(123)
 #' est.kappa(rvm(100, 90, 10), w = 1 / runif(100, 0, 10))
-est.kappa <- function(x, w = NULL, bias = FALSE, ...) {
+est.kappa <- function(x, w = NULL, bias = FALSE, axial = TRUE) {
   w <- if (is.null(w)) {
     rep(1, times = length(x))
   } else {
     as.numeric(w)
+  }
+  if (axial) {
+    x <- (x * 2) %% 360
+  } else {
+    x <- x %% 360
   }
 
   data <- cbind(x = x, w = w)
@@ -788,7 +794,7 @@ est.kappa <- function(x, w = NULL, bias = FALSE, ...) {
   x <- data[, "x"]
   w <- data[, "w"]
 
-  mean.dir <- circular_mean(x, w = w, ...)
+  mean.dir <- circular_mean(x, w = w, axial = FALSE, na.rm = FALSE)
   kappa <- abs(A1inv(mean(cosd(x - mean.dir))))
   if (bias) {
     kappa.ml <- kappa
