@@ -4,7 +4,7 @@
 
 [![CRAN
 status](https://www.r-pkg.org/badges/version/tectonicr)](https://CRAN.R-project.org/package=tectonicr)
-[![](https://img.shields.io/badge/devel%20version-0.4.7.-orange.svg)](https://github.com/tobiste/tectonicr)
+[![](https://img.shields.io/badge/devel%20version-0.4.8.9001-orange.svg)](https://github.com/tobiste/tectonicr)
 [![](http://cranlogs.r-pkg.org/badges/grand-total/tectonicr?color=yellow)](https://cran.r-project.org/package=tectonicr)
 [![R-CMD-check](https://github.com/tobiste/tectonicr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/tobiste/tectonicr/actions/workflows/R-CMD-check.yaml)
 [![codecov](https://codecov.io/gh/tobiste/tectonicr/graph/badge.svg?token=bY7i7QHdix)](https://app.codecov.io/gh/tobiste/tectonicr)
@@ -24,14 +24,16 @@ Stephan et al., 2023). The following methods are available:
     predicted stress field adjacent to a plate boundary, calculated
     using the relative plate motion of the neighboring plates using the
     function `model_shmax()`. The goodness-of-fit can be statistically
-    tested by e.g. `norm_chisq()`, `circular_dispersion()`
-    ,`rayleigh_test()`, and `confidence_interval()`.
+    tested by e.g.`circular_dispersion()`,`rayleigh_test()`, and 
+    `confidence_interval()`.
 -   **Distance to plate boundary**: `distance_from_pb()` gives the
     distance between the stress data point and the plate boundary
     measured along the stress trajectories.
 -   **Trajectories of the theoretical stress field** `eulerpole_paths()`
     generates an `sf` object containing spatial information that is
     suitable to plot with, for instance, `ggplot()`.
+-   **Azimuth plotting** using `geom_azimuth()` or `geom_azimuthpoint()` in 
+    ggplot.
 -   **Relative rotations from a given set of plate motion parameters**:
     `equivalent_rotation()` transfers a set of plate motion parameters
     into the relative plate motions among the given plates.
@@ -45,9 +47,11 @@ Stephan et al., 2023). The following methods are available:
     polar coordinates
 -   **Stress anomaly map**: spatial distribution of the dispersion of
     the observed stress field from the directions of plate boundary
-    forces
+    forces with `kernel_dispersion()`
 -   **Download and filter world stress map data** using
     `download_WSM()`
+
+> The {tectonicr} package is all about orientation data in 2D. For analyzing orientations in 3D (spherical statistics, equal-area projections, etc. ), check out the [structr](https://github.com/tobiste/structr) package!
 
 ## Prerequisites
 

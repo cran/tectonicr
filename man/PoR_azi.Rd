@@ -13,13 +13,12 @@ PoR_shmax(x, PoR, type = c("none", "in", "out", "right", "left"), axial = TRUE)
 }
 \arguments{
 \item{x}{\code{sf} object or a \code{data.frame} containing the coordinates of the
-point(s)
-(\code{lat}, \code{lon}). \code{x} must contain the direction of
-\eqn{\sigma_{Hmax}}{SHmax} as column \code{azi} and its standard deviation
-as \code{unc} (the latter is optional)}
+point(s) (\code{lat}, \code{lon} columns). \code{x} must contain the direction of
+\eqn{\sigma_{Hmax}}{SHmax} as column \code{azi}, its standard deviation
+(column \code{unc}) is optional).}
 
-\item{PoR}{\code{"data.frame"} or object of class \code{"euler.pole"}
-containing the geographical coordinates of the Euler  pole}
+\item{PoR}{\code{data.frame} or object of class \code{euler.pole} containing the
+geographical coordinates of the Eule pole.}
 
 \item{axial}{logical. Whether the azimuth is axial (0-180) or directional
 (0-360).}
@@ -39,7 +38,7 @@ transformed coordinate system (in degrees), or a \code{"data.frame"} with
 \item{\code{azi.PoR}}{the transformed azimuths (in degrees),}
 \item{\code{prd}}{the predicted azimuths (in degrees),}
 \item{\code{dev}}{the deviation between the transformed and the predicted azimuth
-in degrees (positive for clockwise deviation of observed azimuth wrt.
+in degrees (positive for counterclockwise deviation of observed azimuth wrt.
 predicted azimuth),}
 \item{\code{nchisq}}{the Norm \eqn{\chi^2}{chi-squared} test statistic, and}
 \item{\code{cdist}}{the angular distance between the transformed and the predicted

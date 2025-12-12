@@ -91,26 +91,7 @@ model_shmax <- function(df, euler) {
 deviation_norm <- function(x, y = NULL) {
   nx <- length(x)
 
-  if (is.null(y)) {
-    # # deviation is between 0 and 90
-    # if (nx > 1) {
-    #   for (i in seq_along(x)) {
-    #     if (!is.na(x[i])) {
-    #       while (abs(x[i]) > 90) {
-    #         x[i] <- 180 - abs(x[i])
-    #       }
-    #     }
-    #   }
-    # } else {
-    #   if (!is.na(x)) {
-    #     while (abs(x) > 90) {
-    #       x <- 180 - abs(x)
-    #     }
-    #   }
-    # }
-    # abs(x)
-    y <- rep(0, nx)
-  }
+  if (is.null(y)) y <- rep(0, nx)
 
   ny <- length(y)
   stopifnot(
@@ -153,7 +134,7 @@ deviation_norm <- function(x, y = NULL) {
 #' }
 #'
 #' @details
-#' Deviation is positive for clockwise deviation of observed azimuth wrt.
+#' Deviation is positive for counterclockwise deviation of observed azimuth wrt.
 #' predicted azimuth.
 #'
 #'
@@ -181,21 +162,21 @@ deviation_norm <- function(x, y = NULL) {
 deviation_shmax <- function(prd, obs) {
   stopifnot(length(obs) == length(seq_along(prd$gc)))
 
-  # normalize azimuth
+  # Normalize observed azimuth to [0, 180)
   obs <- obs %% 180
 
-  dev.gc <- obs - prd$gc
-  dev.sc <- obs - prd$sc
-  dev.ld.cw <- obs - prd$ld.cw
-  dev.ld.ccw <- obs - prd$ld.ccw
+  dev.gc <- prd$gc - obs
+  dev.sc <- prd$sc - obs
+  dev.ld.cw <- prd$ld.cw - obs
+  dev.ld.ccw <- prd$ld.ccw - obs
 
   data.frame(dev.gc, dev.sc, dev.ld.cw, dev.ld.ccw) |>
     dplyr::mutate(
       dplyr::across(
         dplyr::everything(),
-        ~ if_else(
+        ~ dplyr::if_else(
           abs(.x) > 90,
-          (180 - abs(.x)) * sign(.x),
+          (abs(.x) - 180) * sign(.x),
           .x
         )
       )
@@ -214,13 +195,12 @@ deviation_shmax <- function(prd, obs) {
 #' \eqn{\sigma_{Hmax}}{SHmax}, the circular distance, and the normalized
 #' \eqn{\chi^2}{chi-squared} statistics.
 #'
-#' @param x `sf` object or a \code{data.frame} containing the coordinates of the
-#'  point(s)
-#' (\code{lat}, \code{lon}). `x` must contain the direction of
-#' \eqn{\sigma_{Hmax}}{SHmax} as column \code{azi} and its standard deviation
-#' as \code{unc} (the latter is optional)
-#' @param PoR \code{"data.frame"} or object of class \code{"euler.pole"}
-#' containing the geographical coordinates of the Euler  pole
+#' @param x `sf` object or a `data.frame` containing the coordinates of the
+#' point(s) (`lat`, `lon` columns). `x` must contain the direction of
+#' \eqn{\sigma_{Hmax}}{SHmax} as column `azi`, its standard deviation
+#' (column `unc`) is optional).
+#' @param PoR `data.frame` or object of class `euler.pole` containing the
+#' geographical coordinates of the Eule pole.
 #' @param type Character. Type of plate boundary (optional). Can be
 #' \code{"out"}, \code{"in"}, \code{"right"}, or
 #' \code{"left"} for outward, inward, right-lateral, or left-lateral
@@ -237,7 +217,7 @@ deviation_shmax <- function(prd, obs) {
 #' \item{`azi.PoR`}{the transformed azimuths (in degrees),}
 #' \item{`prd`}{the predicted azimuths (in degrees),}
 #' \item{`dev`}{the deviation between the transformed and the predicted azimuth
-#' in degrees (positive for clockwise deviation of observed azimuth wrt.
+#' in degrees (positive for counterclockwise deviation of observed azimuth wrt.
 #' predicted azimuth),}
 #' \item{`nchisq`}{the Norm \eqn{\chi^2}{chi-squared} test statistic, and}
 #' \item{`cdist`}{the angular distance between the transformed and the predicted
@@ -277,18 +257,22 @@ NULL
 #' @rdname PoR_azi
 #' @export
 PoR_azimuth <- function(x, PoR, axial = TRUE) {
-  stopifnot(is.data.frame(x), is.data.frame(PoR) | is.euler(PoR))
+  stopifnot(is.data.frame(x), is.data.frame(PoR))
   if (inherits(x, "sf")) {
     crds <- sf::st_transform(x, crs = "WGS84") |> sf::st_coordinates()
-    x$lon <- crds[, 1]
-    x$lat <- crds[, 2]
-  }
-
-  theta <- mapply(FUN = get_azimuth, lat_a = x$lat, lon_a = x$lon, lat_b = PoR$lat, lon_b = PoR$lon)
-  if (axial) {
-    (x$azi - theta + 180) %% 180
+    lon <- crds[, 1]
+    lat <- crds[, 2]
   } else {
-    (x$azi - theta + 360) %% 360
+    lon <- x$lon
+    lat <- x$lat
+  }
+  azi <- x$azi
+
+  theta <- mapply(FUN = get_azimuth, lat_a = lat, lon_a = lon, lat_b = PoR$lat, lon_b = PoR$lon)
+  if (isTRUE(axial)) {
+    (azi - theta + 180) %% 180
+  } else {
+    (azi - theta + 360) %% 360
   }
 }
 
@@ -308,12 +292,12 @@ PoR_shmax <- function(x, PoR, type = c("none", "in", "out", "right", "left"), ax
       "left" = 45
     )
 
-    dev <- (azi.por %% 180) - prd
+    dev <- prd - (azi.por %% 180)
     cdist <- (1 - cosd(2 * dev)) / 2
 
     dev <- ifelse(
       abs(dev) > 90,
-      (180 - abs(dev)) * sign(dev),
+      (abs(dev) - 180) * sign(dev),
       dev
     )
 
@@ -365,7 +349,7 @@ PoR2Geo_azimuth <- function(x, PoR, axial = TRUE) {
   #   PoR$lat <- -PoR$lat
   #   PoR$lon <- longitude_modulo(180 + PoR$lon)
   # }
-  f <- ifelse(axial, 1, 2)
+  f <- if (axial) 1 else 2
 
   if (unique(c("lat.PoR", "lon.PoR") %in% colnames(x))) {
     northpole <- geographical_to_PoR(
@@ -381,6 +365,32 @@ PoR2Geo_azimuth <- function(x, PoR, axial = TRUE) {
   azi.geo %% (f * 180)
 }
 
+#' Transforms coordinates and azimuths into PoR coordinates system
+#'
+#' Convenience function to add PoR coordinates and PoR azimuths to data
+#'
+#' @inheritParams PoR_azimuth
+#'
+#' @returns `sf` object in PoR CRS with additional columns `lon.PoR`,
+#' `lat.PoR`, and `azi.PoR`
+#' @export
+#'
+#' @importFrom sf st_coordinates
+#' @importFrom dplyr bind_cols rename
+#'
+#' @examples
+#' por <- subset(nuvel1, nuvel1$plate.rot == "na")
+#' data2PoR(san_andreas, por)
+data2PoR <- function(x, PoR) {
+  X <- Y <- NULL
+  x2 <- geographical_to_PoR(x, PoR)
+  dplyr::bind_cols(x2,
+    sf::st_coordinates(x2) |>
+      as.data.frame() |>
+      dplyr::rename(lon.PoR = X, lat.PoR = Y),
+    azi.PoR = PoR_azimuth(x, PoR)
+  )
+}
 
 
 
@@ -420,8 +430,8 @@ PoR2Geo_azimuth <- function(x, PoR, axial = TRUE) {
 #' res <- superimposed_shmax(san_andreas, pors, types = c("in", "right"), PoR_weighting = c(2, 1))
 #' head(res)
 superimposed_shmax <- function(df, PoRs, types, absolute = TRUE, PoR_weighting = NULL) {
-  res <- c()
-  lats <- c()
+  res <- lats <- NULL
+
   stopifnot(is.character(types))
   if (is.null(PoR_weighting)) {
     PoR_weighting <- rep(1, nrow(PoRs))
@@ -461,6 +471,7 @@ superimposed_shmax <- function(df, PoRs, types, absolute = TRUE, PoR_weighting =
   }
   return(cbind(azi = azi, R = R))
 }
+
 
 #' SHmax direction resulting from multiple plate boundaries considering distance
 #' to plate boundaries

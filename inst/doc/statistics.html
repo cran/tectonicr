@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Tobias Stephan" />
+
+<meta name="date" content="2025-12-11" />
+
+<title>Circular statistics</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Circular statistics</h1>
+<h4 class="author">Tobias Stephan</h4>
+<h4 class="date">2025-12-11</h4>
+
+
+
+<p>This vignette teaches you how to retrieve statistical parameters of
+orientation data, for example the mean direction of stress datasets.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(tectonicr)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># load ggplot library</span></span></code></pre></div>
+<div id="orientation-data-types" class="section level2">
+<h2>Orientation data types</h2>
+<p>Circular orientation data are two-dimensional orientation vectors
+that are either <strong>directional</strong> or
+<strong>axial</strong>.</p>
+<ul>
+<li><strong>Directional</strong> data are <span class="math inline">\(2\pi\)</span>-periodical, the angle <span class="math inline">\(\alpha\)</span> is non-symmetrical on a circle.
+The modulus of the angle is <span class="math inline">\(2\pi\)</span>
+(360°): α = α mod <span class="math inline">\(2\pi\)</span>. Directional
+data usually involve processes where objects or particles were
+transported from one known place to another. Examples are wind
+direction, bird vanishing angles, plate motion, and fault slip
+directions.</li>
+<li><strong>Axial</strong> data are <span class="math inline">\(\pi\)</span>-periodical, i.e. each direction is
+considered as equivalent to the opposite direction, so that the angles
+<span class="math inline">\(\alpha\)</span> and <span class="math inline">\(\alpha + 180^\circ\)</span> are equivalent. The
+modulus of the angle is <span class="math inline">\(\pi\)</span> (180°):
+α = α mod <span class="math inline">\(\pi\)</span>. Data usually
+involves transport of objects where the origin is unknown or doesn’t
+matter as the transport could be extended infinitely. Examples are
+glacial striae, mineral alignments (long-axis of grain or crystal
+shapes), and principal stress/strain axes (e.g. shortening or
+compression direction, including the angle of the maximum horizontal
+stress <span class="math inline">\(\sigma_\text{Hmax}\)</span>).</li>
+</ul>
+<blockquote>
+<p>In (almost) every function in the <strong>tectonicr</strong> library,
+the <code>axial</code> argument specifies whether your angles
+<code>x</code> are axial (<code>TRUE</code>) or directional
+(<code>FALSE</code>). Because this package is mainly designed for
+analyzing stress orientations, the default is
+<code>axial=TRUE</code>.</p>
+</blockquote>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>angles <span class="ot">&lt;-</span> <span class="fu">rvm</span>(<span class="dv">10</span>, <span class="at">mean =</span> <span class="dv">35</span>, <span class="at">kappa =</span> <span class="dv">20</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>), <span class="at">xpd =</span> <span class="cn">NA</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">circular_plot</span>(<span class="at">main =</span> <span class="st">&quot;Directional&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="fu">rose_line</span>(angles, <span class="at">axial =</span> <span class="cn">FALSE</span>, <span class="at">col =</span> <span class="st">&quot;#B63679FF&quot;</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="fu">circular_plot</span>(<span class="at">main =</span> <span class="st">&quot;Axial&quot;</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="fu">rose_line</span>(angles, <span class="at">axial =</span> <span class="cn">TRUE</span>, <span class="at">col =</span> <span class="st">&quot;#B63679FF&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASAAAAEgCAMAAAAjXV6yAAABX1BMVEUAAAAAABAAABcAACAAACgAADoAAEkAAFgAAGYAFwAAIXwAKAAAKDoAMlEAMpAAOioAOjoAOmYAOpAAOp0AWLYAZoEAZpAAZrYNADEXAAAXZtsdOgAhAAAhADooAAAoOgAokNsxADo6AAA6ADo6AGY6KgA6OgA6Ojo6OmY6WDI6Zlg6ZpA6ZrY6fHs6kLY6kLw6kNs6nf9JNABJSQBJWABJgWZmAABmOgBmOjpmZjpmgWZmkLZmkNtmnJBmnZBmtttmtv9m2/98ezqBZgCQMgCQOgCQZjqQkLaQnGaQnWaQtpCQttuQvJCQ27aQ29uQ2/+d//+2Nnm2SQC2WAC2ZgC2Zjq2ZpC2kGa2tma225C229u22/+2/7a2/9u2//+8kDrbZhfbkDrbtmbbtpDb25Db27bb29vb/7bb/9vb////gSj/nDr/tkn/tmb/22b/25D/27b//4H//7b//9v///+v7eJQAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAIaklEQVR4nO2d+3vTZBiGP8eCVTytHiYeQDsEFNQoWhRR5qHIQamRqMC0GhC1aOxc+/9fvt8haXdt8CzZ25QfnvtSlqVdvmf3d0y6KzET8kDMogM87FAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEGACoIy44hObcg3455pD9FPjH8c7O2Nez1gBXJjWgNQxl7KrC5IFK3v7dibZ1uLE5RK0HVQxrwEmai/x4w76vD+KAva6krOVYUyKwlyv+/ds7Zkf+zMRFfOmtbGZPyDaDvtC7t93JhnLvg6NK1fQog7H8neT4buONE1efuKs3xHjmZO9tUF5Sb62OcddexXEdYahDIqlVldkC2rPSwEWdpDV1/yO9vXU9/K4u2CQvOb2XTtMC83lQWlpv17R0K43PI1sx3Ol1GtzBqC3EYpqL0x+cN2pg1bVbH7ld8Zbtr68l3Mv1Fe82+PXeCVDb8tL74w9D+oK0hqLC6OKF+jK658t6dimfUERf1S0HqIU7zBDzzZqVuTWUFhOHJf/A9JQj9E3P3p+LTPapHbBpKFwVKK8u21LKNCmfsV5CK4BL7ZzpY5FVTszaa5RaoIGl/0P6gsqGy2cQjimm7YXa1MFUG5mRVUzh1TQd6Ge+P6rCB50ax8fberLaisMX/IvONzFpVVpcwaguSw0zGoaEHFkqNaC/J1vKUuaLoiWfeZvCpXRsUyqwva7G2b5q2gooFY/GiTn7z6gDGoFJQXw5HuIO2MFP3I6Tru+pgro2KZdReK2wTJLx5dmGx2wyR62jXj0Jd2m8VmW1B7OGtch2ICcG3dFfJnt8xSscz9nWoUgsI6yH2TllWX328dtG0MmsMgnRVnGXbDzvJ9m2V1OgbNa5DecbJaCJpsXpRh0b0QVtLn7XvsevnW7Er6vD/O9lls5ep0YaWCbzgW21pu+xks9a7CLLb3Mnm5A0BBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCDA3ATle76zezPUzTMvQbm9++VDZKh2njkJGvfc3S/RXfcbo36eOQkadezNVLMKT0WYL/XzaAnKpl18dGwwGa196+5/e8jeK9XfCrfZ1qSWR0mQrZu8uDOw2/5mTTr9kruZ7Git8bFIL4+OoK2uu521rRT/yJg8utQy5h9/f+S88Z6mmEdxDHKBchPb8kfFvafdDaQXM1br5FEUlIVOL4EkyZkT8k+SGCkgPRGeStAsOnnUBOVlmbk05nHvcPuv3tEkaUukrq22tGFDWnlUu1h4SIOtJRkhsyekwpJhYkLMpgcinTwagtxd4qVC7hUdfeCftBElyRHbqF0Zfzd36qGaR0HQuOcelrHqV2N2kTGwM+xv0uVtp18f2Tvw5wde7Td06qGbR0GQ5JD/ZOXhWm3Wsk9CiGVPupokyeNDO4MMx7237HN/GpnOdPMojUFp+3Z0zZ7vjDqxad2UqktXM8ljnpJh4HvTH3XOxE2eeujl0RqkiyfmpTJltG7apWoq7fmcC+QGgPcmjQ7Uanm0BOV+UpUlrJ8y7K6kH84RjQl7mrv+oZZHSVAezv1skWYyLT6V/+2jkZoWtEse6WB18ugIyotFWSpLDxPOBl0Dlqbe+ln6/HRPE+ySR/zUyqMiKDPv+qXHVtdtvC0t+d/D7pqCvewg8+yoc8R+e7AZQbvkSRK3AqqeR0NQZi6Epceo80bUl4Ifi7e6Sx+shssOMjKOv3qx39gVxp15EketPCrroLi4YHfjwCuyYbLlJWMekYz/HXlWvjXPyap26fOmhqCdeZJlJ6hWHgVBxVOjZGX6hb2ycGxglorHw/mLd8tSnU83dqqxSx67hE7q5dG8Jp3aMc9ewJNOnjlJL9n6MtGlqL+ISx4zecIQVCOPoqA8PGa1dcPENsZ3k/SQq8t4kj6/gEse2/KIoHp59ATlJlzAW5599Jys8se99q9+Pm30kodSHsULZqE67pnX5N9sSdb45rPOp/ZaeXTJJ/FjZzNo5dH72CcuNh4d+FwyCI7WLrul67nwyNzmPt5Qy6P1sU/xoNXMnHO1c920ZDX2pvnQfuQbptsGu5heHh1BsvQoN1ypo877B+0TVV9+8vX+uCf7vrRrssYGacU8OoLKpUexcTm67Hdcd8shWcAW1x8aQTGP/mfzocZCE178XzHsM8+cBLlFmmvoC/87mH3mmZeg8hHms39GsBD2mYd/ggegIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggAUBKAgAAUBKAhAQQAKAlAQgIIAFASgIAAFASgIQEEACgJQEICCABQEoCAABQEoCEBBAAoCUBCAggD/A2uNmO8jB27cAAAAAElFTkSuQmCC" /><!-- --></p>
+</div>
+<div id="mean-direction" class="section level2">
+<h2>Mean direction</h2>
+<p>In case of axial data, the calculation of the mean of, say, of
+35<span class="math inline">\(^{\circ}\)</span> and 355<span class="math inline">\(^{\circ}\)</span> should be 15 instead of 195<span class="math inline">\(^{\circ}\)</span>. <strong>tectonicr</strong>
+provides the circular mean (<code>circular_mean()</code>) and the
+quasi-median (<code>circular_median()</code>) as metrics to describe
+average direction:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;san_andreas&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas<span class="sc">$</span>azi)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a><span class="co">#&gt; [1] 10.64134</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas<span class="sc">$</span>azi)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt; [1] 35.5</span></span></code></pre></div>
+<blockquote>
+<p>Again: if your angles are directional, you need to specify the
+<code>axial</code> argument.</p>
+</blockquote>
+<p>Note the different results:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas<span class="sc">$</span>azi, <span class="at">axial =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co">#&gt; [1] 53.66556</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas<span class="sc">$</span>azi, <span class="at">axial =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1] 36.5</span></span></code></pre></div>
+</div>
+<div id="quality-weighted-mean-direction" class="section level2">
+<h2>Quality weighted mean direction</h2>
+<p>Because the stress data is heteroscedastic, the data with less
+precise direction should have less impact on the final mean direction
+The weighted mean or quasi-median uses the reported measurements linear
+weighted by the inverse of the uncertainties:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>w <span class="ot">&lt;-</span> <span class="fu">weighting</span>(san_andreas<span class="sc">$</span>unc)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas<span class="sc">$</span>azi, w)</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1] 10.85382</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas<span class="sc">$</span>azi, w)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; [1] 35.53572</span></span></code></pre></div>
+<p>The spread of directional data can be expressed by the standard
+deviation (for the mean) or the quasi-interquartile range (for the
+median):</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">circular_sd</span>(san_andreas<span class="sc">$</span>azi, w) <span class="co"># standard deviation</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] 23.84385</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">circular_IQR</span>(san_andreas<span class="sc">$</span>azi, w) <span class="co"># interquartile range</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt; [1] 35</span></span></code></pre></div>
+</div>
+<div id="statistics-in-the-pole-of-rotation-por-reference-frame" class="section level2">
+<h2>Statistics in the Pole of Rotation (PoR) reference frame</h2>
+<p><strong>NOTE:</strong> Because the <span class="math inline">\(\sigma_{SHmax}\)</span> orientations are subjected
+to angular distortions in the geographical coordinate system, it is
+recommended to express statistical parameters using the transformed
+orientations of the PoR reference frame.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;cpm_models&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>por <span class="ot">&lt;-</span> cpm_models[[<span class="st">&quot;NNR-MORVEL56&quot;</span>]] <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">equivalent_rotation</span>(<span class="st">&quot;na&quot;</span>, <span class="st">&quot;pa&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>san_andreas.por <span class="ot">&lt;-</span> <span class="fu">PoR_shmax</span>(san_andreas, por, <span class="at">type =</span> <span class="st">&quot;right&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">circular_mean</span>(san_andreas.por<span class="sc">$</span>azi.PoR, w)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; [1] 139.7927</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">circular_sd</span>(san_andreas.por<span class="sc">$</span>azi.PoR, w)</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; [1] 22.49684</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">circular_median</span>(san_andreas.por<span class="sc">$</span>azi.PoR, w)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; [1] 135.6247</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">circular_IQR</span>(san_andreas.por<span class="sc">$</span>azi.PoR, w)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; [1] 25.89473</span></span></code></pre></div>
+<p>The collected summary statistics can be quickly obtained by
+<code>circular_summary()</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">circular_summary</span>(san_andreas.por<span class="sc">$</span>azi.PoR, w, <span class="at">mode =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt;            n         mean           sd          var          25% quasi-median </span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; 1126.0000000  139.7927014   22.4968398    0.2653334  123.5288513  135.6247317 </span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;          75%       median         mode           CI     skewness     kurtosis </span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt;  149.4235849  137.4843360  138.0821918    5.1165083   -0.2890426    1.6306589 </span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt;            R </span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;    0.7346666</span></span></code></pre></div>
+<p>The summary statistics additionally include the circular
+quasi-quantiles, the variance, the skewness, the kurtosis, the mode, the
+95% confidence angle, and the mean resultant length (R).</p>
+</div>
+<div id="rose-diagram" class="section level2">
+<h2>Rose diagram</h2>
+<p><strong>tectonicr</strong> provides a rose diagram, i.e. histogram
+for angular data.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">rose</span>(san_andreas<span class="sc">$</span>azi,</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  <span class="at">weights =</span> w, <span class="at">main =</span> <span class="st">&quot;North pole&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">dots =</span> <span class="cn">TRUE</span>, <span class="at">stack =</span> <span class="cn">TRUE</span>, <span class="at">dot_cex =</span> <span class="fl">0.5</span>, <span class="at">dot_pch =</span> <span class="dv">21</span></span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>)</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co"># add the density curve</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="fu">plot_density</span>(san_andreas<span class="sc">$</span>azi, <span class="at">kappa =</span> <span class="dv">20</span>, <span class="at">col =</span> <span class="st">&quot;#51127CFF&quot;</span>, <span class="at">scale =</span> <span class="fl">1.1</span>, <span class="at">shrink =</span> <span class="dv">2</span>, <span class="at">xpd =</span> <span class="cn">NA</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>The diagram shows the uncertainty-weighted frequencies (equal area
+rose fans), the von Mises density distribution (blue curve), and the
+circular mean (red line) incl. its 95% confidence interval (transparent
+red).</p>
+<p>Showing the distribution of the transformed data gives the better
+representation of the angle distribution as there is no angle distortion
+due to the arbitrarily chosen geographic coordinate system.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">rose</span>(san_andreas.por<span class="sc">$</span>azi,</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  <span class="at">weights =</span> w, <span class="at">main =</span> <span class="st">&quot;PoR&quot;</span>,</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>  <span class="at">dots =</span> <span class="cn">TRUE</span>, <span class="at">stack =</span> <span class="cn">TRUE</span>, <span class="at">dot_cex =</span> <span class="fl">0.5</span>, <span class="at">dot_pch =</span> <span class="dv">21</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="fu">plot_density</span>(san_andreas.por<span class="sc">$</span>azi, <span class="at">kappa =</span> <span class="dv">20</span>, <span class="at">col =</span> <span class="st">&quot;#51127CFF&quot;</span>, <span class="at">scale =</span> <span class="fl">1.1</span>, <span class="at">shrink =</span> <span class="dv">2</span>, <span class="at">xpd =</span> <span class="cn">NA</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co"># show the predicted direction</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="fu">rose_line</span>(<span class="dv">135</span>, <span class="at">radius =</span> <span class="fl">1.1</span>, <span class="at">col =</span> <span class="st">&quot;#FB8861FF&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>The green line shows the predicted direction.</p>
+</div>
+<div id="qq-plot" class="section level2">
+<h2>QQ Plot</h2>
+<p>The (linearised) circular QQ-Plot (<code>circular_qqplot()</code>)
+can be used to visually assess whether our stress sample is drawn from
+an uniform distribution or has a preferred orientation.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">circular_qqplot</span>(san_andreas.por<span class="sc">$</span>azi.PoR)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+<p>Our data clearly deviates from the diagonal line, indicating the data
+is not randomly distributed and has a strong preferred orientation
+around the 50% quantile.</p>
+</div>
+<div id="statistical-tests" class="section level2">
+<h2>Statistical tests</h2>
+<div id="test-for-random-distribution" class="section level3">
+<h3>Test for random distribution</h3>
+<p>Uniformly distributed orientation can be described by the <em>von
+Mises distribution</em><a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. If the directions are distributed randomly
+can be tested with the <strong>Rayleigh Test</strong>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">rayleigh_test</span>(san_andreas.por<span class="sc">$</span>azi.PoR)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="co">#&gt; Reject Null Hypothesis</span></span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; $R</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.7118209</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; [1] 570.5317</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a><span class="co">#&gt; [1] 1.664245e-248</span></span></code></pre></div>
+<p>Here, the test rejects the Null Hypothesis
+(<code>statistic &gt; p.value</code>). Thus the <span class="math inline">\(\sigma_{SHmax}\)</span> directions have a
+preferred orientation.</p>
+<p>Alternative statistical tests for circular uniformity are
+<code>kuiper_test()</code> and <code>watson_test()</code>. Read
+<code>help()</code> for more details…</p>
+</div>
+</div>
+<div id="test-for-goodness-of-fit" class="section level2">
+<h2>Test for goodness-of-fit</h2>
+<div id="confidence-intervals" class="section level3">
+<h3>Confidence intervals</h3>
+<p>Assuming a von Mises Distribution (circular normal distribution) of
+the orientation data, a <span class="math inline">\(100(1-\alpha)\%\)</span> <strong>confidence
+interval</strong><a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> can be calculated:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">confidence_interval</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">conf.level =</span> <span class="fl">0.95</span>, <span class="at">w =</span> w)</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="co">#&gt; $mu</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1] 139.7927</span></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a><span class="co">#&gt; $conf.angle</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a><span class="co">#&gt; [1] 5.116508</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a><span class="co">#&gt; $conf.interval</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a><span class="co">#&gt; [1] 134.6762 144.9092</span></span></code></pre></div>
+<p>The prediction for the <span class="math inline">\(\sigma_{SHmax}\)</span> orientation is <span class="math inline">\(135^{\circ}\)</span>. Since the prediction lies
+within the confidence interval, it can be concluded with 95% confidence
+that the orientations follow the predicted trend of <span class="math inline">\(\sigma_{SHmax}\)</span>.</p>
+</div>
+<div id="circular-dispersion" class="section level3">
+<h3>Circular dispersion</h3>
+<p>The (weighted) <strong>circular dispersion</strong> of the
+orientation angles around the prediction is another way of assessing the
+significance of a normal distribution around a specified direction. The
+measure is based on the circular distance<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a> defined as <span class="math display">\[d = 1 - \cos{\left[ k(\theta -
+\mu)\right]}\]</span> where <span class="math inline">\(\theta\)</span>
+are the observed angles (here <span class="math inline">\(\sigma_{Hmax}\)</span>), <span class="math inline">\(\mu\)</span> is the theoretical angles, and <span class="math inline">\(k=1\)</span> for directional data and <span class="math inline">\(k=2\)</span> for directional data. The (weighted)
+dispersion<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a> is</p>
+<p><span class="math display">\[D = \frac{1}{Z} \sum_{i=1}^{n} w_i
+d_i\]</span> where <span class="math inline">\(n\)</span> s the number
+if observations, <span class="math inline">\(w_i\)</span> are weights of
+each observation, and <span class="math inline">\(Z\)</span> is the sum
+of all weights <span class="math inline">\(Z=\sum_{i=1}^{n}
+w_i\)</span>.</p>
+<p>It can be measured using <code>circular_dispersion()</code>:</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">circular_dispersion</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> w)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co">#&gt; [1] 0.1377952</span></span></code></pre></div>
+<p>The dispersion parameter yields a number in the range between 0 and 1
+which indicates the quality of the fit. Low dispersion values (<span class="math inline">\(D \le 0.15\)</span>) indicate good agreement
+between predicted and observed directions (angle difference <span class="math inline">\(\le 22.5^\circ\)</span> for axial data). High
+values (<span class="math inline">\(D &gt; 0.5\)</span>) indicate a
+systematic misfit between predicted and observed directions of about
+<span class="math inline">\(&gt; 45^\circ\)</span> (axial data). A
+misfit of <span class="math inline">\(90^\circ\)</span> and/or a random
+distribution of results in <span class="math inline">\(D =
+1\)</span>.</p>
+<p>The standard error and the confidence interval of the calculated
+circular dispersion can be estimated by bootstrapping via:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">circular_dispersion_boot</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">y =</span> <span class="dv">135</span>, <span class="at">w =</span> w, <span class="at">R =</span> <span class="dv">1000</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co">#&gt; $MLE</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="co">#&gt; [1] 0.2643902</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="co">#&gt; $sde</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="co">#&gt; [1] 0.01150477</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="co">#&gt; $CI</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; [1] 0.2422241 0.2861837</span></span></code></pre></div>
+</div>
+<div id="rayleigh-test" class="section level3">
+<h3>Rayleigh Test</h3>
+<p>The statistical test for the goodness-of-fit is the (weighted)
+<strong>Rayleigh Test</strong><a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a> with a specified mean direction (here the
+predicted direction of <span class="math inline">\(135^{\circ}\)</span>):</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">weighted_rayleigh</span>(san_andreas.por<span class="sc">$</span>azi.PoR, <span class="at">mu =</span> <span class="dv">135</span>, <span class="at">w =</span> w)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; Reject Null Hypothesis</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a><span class="co">#&gt; $C</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.7244095</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a><span class="co">#&gt; $statistic</span></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co">#&gt; [1] 34.37703</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="co">#&gt; $p.value</span></span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co">#&gt; [1] 8.045524e-256</span></span></code></pre></div>
+<p>Here, the Null Hypothesis is rejected, and thus, the alternative,
+i.e. an non-uniform distribution with the predicted direction as the
+mean cannot be excluded.</p>
+</div>
+</div>
+<div id="orientation-tensor" class="section level2">
+<h2>Orientation tensor</h2>
+<p>For axial orientation data, summary statistics can also be expressed
+by the 2D orientation tensor. The orientation tensor is related to the
+moment of inertia given, that is minimized by calculating the Cartesian
+coordinates of the orientation data, and calculating their covariance
+matrix:</p>
+<p><span class="math display">\[
+  I =
+  \left[
+    \begin{array}{@{}cc@{}}
+      s_x^2 &amp; s_{x,y} \\
+      s_{y,x} &amp; s_y^2
+    \end{array}
+    \right] =
+  \left[
+    \begin{array}{@{}cc@{}}
+      \frac{1}{n}\sum\limits_{i=1}^{n} (x_i-0)^2 &amp;
+      \frac{1}{n}\sum\limits_{i=1}^{n} (x_i-0)(y_i-0) \\
+      \frac{1}{n}\sum\limits_{i=1}^{n} (y_i-0)(x_i-0) &amp;
+      \frac{1}{n}\sum\limits_{i=1}^{n} (y_i-0)^2
+    \end{array}
+    \right]
+  =
+  \frac{1}{n}
+  \left[
+    \begin{array}{@{}cc@{}}
+      \sum\limits_{i=1}^{n} x_i^2 &amp;
+      \sum\limits_{i=1}^{n} x_iy_i \\
+      \sum\limits_{i=1}^{n} x_iy_i &amp;
+      \sum\limits_{i=1}^{n} y_i^2
+    \end{array}
+    \right] =
+    \frac{1}{n}
+  \sum\limits_{i=1}^{n}
+  \left[
+    \begin{array}{@{}c@{}}
+      x_i \\ y_i
+    \end{array}
+    \right]
+  \left[
+    \begin{array}{@{}cc@{}}
+      x_i &amp; y_i
+    \end{array}
+    \right]
+  \]</span></p>
+<p>Orientation tensor <span class="math inline">\(T\)</span> and the
+inertia tensor <span class="math inline">\(I\)</span> are related by
+<span class="math inline">\(I = E - T\)</span> where <span class="math inline">\(E\)</span> denotes the unit matrix, so that <span class="math display">\[T = \frac{1}{n} \sum_{i=i}^{n} x_i \cdot
+x_i^\intercal\]</span>.</p>
+<p>The spectral decomposition of the 2D orientation tensor into two
+Eigenvectors and corresponding Eigenvalues provides provides a measure
+of location and a corresponding measure of dispersion, respectively.</p>
+<p>The function <code>ot_eigen2d()</code>calculates the orientation
+tensor and extracts the Eigenvalues and Eigenvectors. The function
+accepts the weightings of the data:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">ot_eigen2d</span>(san_andreas.por<span class="sc">$</span>azi.PoR, w)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a><span class="co">#&gt; eigen() decomposition</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co">#&gt; $values</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co">#&gt; [1] 0.7259300 0.1054388</span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co">#&gt; $vectors</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="co">#&gt; [1] -40.25985  49.74015</span></span></code></pre></div>
+<p>The <strong>Eigenvalues</strong> (<span class="math inline">\(\lambda_1 &gt; \lambda_2\)</span>) can be
+interpreted as the fractions of the variance explained by the
+orientation of the associated Eigenvectors. The two perpendicular
+<strong>Eigenvectors</strong> (<span class="math inline">\(a_1,
+a_2\)</span>) are the “principal directions” with respect to the highest
+and the lowest concentration of orientation data.</p>
+<p>The strength of the orientation is the largest Eigenvalue <span class="math inline">\(\lambda_1\)</span> normalized by the sum of the
+eigenvalues. The smallest Eigenvalue <span class="math inline">\(\lambda_2\)</span> is a <strong>measure of
+dispersion</strong> of 2D orientation data with respect to <span class="math inline">\(a_1\)</span>.</p>
+</div>
+<div id="references" class="section level1">
+<h1>References</h1>
+<p>Bachmann, F., Hielscher, R., Jupp, P. E., Pantleon, W., Schaeben, H.,
+&amp; Wegert, E. (2010). Inferential statistics of electron backscatter
+diffraction data from within individual crystalline grains. Journal of
+Applied Crystallography, 43(6), 1338–1355. <a href="https://doi.org/10.1107/S002188981003027X" class="uri">https://doi.org/10.1107/S002188981003027X</a></p>
+<p>Mardia, K. V., and Jupp, P. E. (Eds.). (1999). “Directional
+Statistics” Hoboken, NJ, USA: John Wiley &amp; Sons, Inc. <a href="https://doi.org/10.1002/9780470316979" class="uri">https://doi.org/10.1002/9780470316979</a></p>
+<p>Stephan, T., &amp; Enkelmann, E. (2025). All Aligned on the Western
+Front of North America? Analyzing the Stress Field in the Northern
+Cordillera. Tectonics, 44(9). <a href="https://doi.org/10.1029/2025TC009014" class="uri">https://doi.org/10.1029/2025TC009014</a></p>
+<p>Ziegler, Moritz O., and Oliver Heidbach. 2017. “Manual of the Matlab
+Script Stress2Grid” GFZ German Research Centre for Geosciences; World
+Stress Map Technical Report 17-02. doi: <a href="https://doi.org/10.5880/wsm.2017.002">10.5880/wsm.2017.002</a>.</p>
+</div>
+<div class="footnotes footnotes-end-of-document">
+<hr />
+<ol>
+<li id="fn1"><p>Mardia, K. V., and Jupp, P. E. (Eds.). (1999).
+“Directional Statistics” Hoboken, NJ, USA: John Wiley &amp; Sons,
+Inc. doi: 10.1002/9780470316979.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
+<li id="fn2"><p>Mardia, K. V., and Jupp, P. E. (Eds.). (1999).
+“Directional Statistics” Hoboken, NJ, USA: John Wiley &amp; Sons,
+Inc. doi: 10.1002/9780470316979.<a href="#fnref2" class="footnote-back">↩︎</a></p></li>
+<li id="fn3"><p>Mardia, K. V., and Jupp, P. E. (Eds.). (1999).
+“Directional Statistics” Hoboken, NJ, USA: John Wiley &amp; Sons,
+Inc. doi: 10.1002/9780470316979.<a href="#fnref3" class="footnote-back">↩︎</a></p></li>
+<li id="fn4"><p>Stephan, T., &amp; Enkelmann, E. (2025). All Aligned on
+the Western Front of North America? Analyzing the Stress Field in the
+Northern Cordillera. Tectonics, 44(9). <a href="https://doi.org/10.1029/2025TC009014" class="uri">https://doi.org/10.1029/2025TC009014</a><a href="#fnref4" class="footnote-back">↩︎</a></p></li>
+<li id="fn5"><p>Stephan, T., &amp; Enkelmann, E. (2025). All Aligned on
+the Western Front of North America? Analyzing the Stress Field in the
+Northern Cordillera. Tectonics, 44(9). <a href="https://doi.org/10.1029/2025TC009014" class="uri">https://doi.org/10.1029/2025TC009014</a><a href="#fnref5" class="footnote-back">↩︎</a></p></li>
+</ol>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

@@ -7,7 +7,7 @@
 \alias{sample_circular_dispersion}
 \title{Sample circular dispersion}
 \usage{
-sample_circular_variance(x, w = NULL, axial = TRUE, na.rm = TRUE)
+sample_circular_variance(x, w = NULL, axial = TRUE)
 
 sample_circular_distance(x, y, axial = TRUE, na.rm = TRUE)
 
@@ -50,7 +50,7 @@ PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
 sa.por <- PoR_shmax(san_andreas, PoR, "right")
 sample_circular_variance(sa.por$azi.PoR)
 sample_circular_dispersion(sa.por$azi.PoR, y = 135)
-sample_circular_dispersion(sa.por$azi.PoR, y = 135, w = 1 / san_andreas$unc)
+sample_circular_dispersion(sa.por$azi.PoR, y = 135, w = weighting(san_andreas$unc))
 }
 \references{
 N.I. Fisher (1993) Statistical Analysis of Circular Data, Cambridge

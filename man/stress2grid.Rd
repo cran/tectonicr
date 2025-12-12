@@ -7,7 +7,7 @@
 \usage{
 stress2grid(
   x,
-  stat = c("mean", "median"),
+  stat = c("mean", "median", "tensor"),
   grid = NULL,
   lon_range = NULL,
   lat_range = NULL,
@@ -63,8 +63,9 @@ of SHmax}
 }}
 
 \item{stat}{whether the direction of interpolated SHmax is based on the
-circular mean and standard deviation (\code{"mean"}, the default) or the
-quasi-circular median and quasi-interquartile range (\code{"median"}).}
+circular mean and standard deviation (\code{"mean"}, the default), the
+quasi-circular median and quasi-interquartile range (\code{"median"}), or the
+orientation tensor based principal direction and dispersion ("tensor").}
 
 \item{grid}{(optional) Point object of class \code{sf}.}
 
@@ -129,8 +130,8 @@ for the circular mode. Will be estimated using \code{\link[=est.kappa]{est.kappa
 \code{sf} object containing
 \describe{
 \item{lon,lat}{longitude and latitude in degrees}
-\item{azi}{Mean od median SHmax in degree}
-\item{sd}{Standard deviation or Quasi-IQR of SHmax in degrees}
+\item{azi}{Circular mean od median SHmax in degree}
+\item{sd}{Circular standard deviation or Quasi-IQR on the Circle of SHmax in degrees}
 \item{R}{Search radius in km}
 \item{mdr}{Mean distance between grid point and datapoints per search radius}
 \item{N}{Number of data points in search radius}
@@ -159,6 +160,8 @@ data("san_andreas")
 
 # Inverse Distance Weighting interpolation:
 stress2grid(san_andreas, stat = "median") |> head()
+
+stress2grid(san_andreas, stat = "tensor") |> head()
 
 # Nearest Neighbor interpolation:
 stress2grid(san_andreas, stat = "median", max_data = 5) |> head()

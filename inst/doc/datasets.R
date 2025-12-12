@@ -51,30 +51,23 @@ map +
     data = trajectories,
     lty = 2
   ) +
-  geom_spoke(
+  geom_azimuth(
     data = san_andreas.res,
     aes(
       x = lon,
       y = lat,
-      angle = deg2rad(90 - azi),
+      angle = azi,
       color = deviation_norm(dev),
       alpha = quality
-    ),
-    radius = 1,
-    position = "center_spoke",
-    na.rm = TRUE
+    )
   ) +
   coord_sf(
     xlim = range(san_andreas$lon),
     ylim = range(san_andreas$lat)
   )
 
-## ----san_andreas_nchisq, echo=TRUE--------------------------------------------
-norm_chisq(
-  obs = san_andreas.res$azi.PoR,
-  prd = 135,
-  unc = san_andreas.res$unc
-)
+## ----san_andreas_dipersion----------------------------------------------------
+circular_dispersion(san_andreas.res$azi.PoR, 135, w = weighting(san_andreas.res$unc))
 
 ## ----san_andreas_distance, echo=TRUE------------------------------------------
 plate_boundary <- subset(plates, plates$pair == "na-pa")
@@ -139,9 +132,9 @@ azi_plot +
 
 ## ----san.andreas.distanceplot2, echo=TRUE, echo=TRUE, message=FALSE, warning=FALSE----
 # plotting:
-ggplot(san_andreas.res, aes(x = distance, y = nchisq)) +
+ggplot(san_andreas.res, aes(x = distance, y = cdist)) +
   coord_cartesian(ylim = c(0, 1)) +
-  labs(x = "Distance from plate boundary (\u00B0)", y = expression(Norm ~ chi^2)) +
+  labs(x = "Distance from plate boundary (\u00B0)", y = "Circular distance") +
   geom_hline(yintercept = c(0.15, .33, .7), lty = 3) +
   geom_point(aes(color = san_andreas$regime)) +
   scale_y_continuous(sec.axis = sec_axis(
@@ -154,7 +147,7 @@ ggplot(san_andreas.res, aes(x = distance, y = nchisq)) +
   scale_color_manual(name = "Tectonic regime", values = stress_colors(), breaks = names(stress_colors())) +
   geom_step(
     data = san_andreas_binned,
-    aes(distance_median, nchisq)
+    aes(distance_median, dispersion)
   )
 
 ## ----plot_base, echo=TRUE, warning=FALSE, message=FALSE-----------------------
@@ -209,5 +202,5 @@ results$stats
 results$test
 
 ## ----quick_plot, eval=FALSE---------------------------------------------------
-#  stress_analysis(san_andreas, por, "right", plate_boundary, plot = TRUE)
+# stress_analysis(san_andreas, por, "right", plate_boundary, plot = TRUE)
 

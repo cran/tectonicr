@@ -1,6 +1,6 @@
 Package: tectonicr
 Title: Analyzing the Orientation of Maximum Horizontal Stress
-Version: 0.4.7
+Version: 0.4.8
 Authors@R: 
     person("Tobias", "Stephan", , "tobias.stephan1@yahoo.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-9290-014X"))
@@ -15,22 +15,22 @@ URL: https://tobiste.github.io/tectonicr/
 BugReports: https://github.com/tobiste/tectonicr/issues
 Depends: R (>= 4.1.0)
 Imports: boot, circular (>= 0.5.0), dplyr, ggplot2, lifecycle, methods,
-        RColorBrewer, sf, smoothr (>= 1.0.1), spatstat.explore (>=
-        3.2.7), spatstat.geom (>= 3.2.9), spatstat.univar (>= 2.0.3),
-        spatstat.utils (>= 3.0.4), terra, tidyr, viridis, zoo (>=
-        1.8.12)
-Suggests: ggforce, knitr, rmarkdown, roxygen2, testthat (>= 3.0.0),
-        tidyterra
+        RColorBrewer, rlang, sf, smoothr (>= 1.0.1), spatstat.explore
+        (>= 3.2.7), spatstat.geom (>= 3.2.9), spatstat.univar (>=
+        2.0.3), spatstat.utils (>= 3.0.4), terra, tidyr, viridis, zoo
+        (>= 1.8.12)
+Suggests: ggforce, grid, knitr, rmarkdown, roxygen2, testthat (>=
+        3.0.0), tidyterra
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
 LazyData: true
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 NeedsCompilation: no
-Packaged: 2025-05-22 16:13:31 UTC; tstephan
+Packaged: 2025-12-11 19:03:41 UTC; tstephan
 Author: Tobias Stephan [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-9290-014X>)
 Maintainer: Tobias Stephan <tobias.stephan1@yahoo.com>
 Repository: CRAN
-Date/Publication: 2025-05-22 16:50:01 UTC
+Date/Publication: 2025-12-12 07:10:08 UTC

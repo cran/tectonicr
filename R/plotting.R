@@ -98,7 +98,7 @@ stress_colors <- function() {
 #' data("san_andreas")
 #' axes(san_andreas$lon, san_andreas$lat, san_andreas$azi, add = FALSE)
 axes <- function(x, y, angle, radius = .5, arrow.code = 1, arrow.length = 0, add = FALSE, ...) {
-  if (!add) plot(x, y, cex = 0, ...)
+  if (isFALSE(add)) plot(x, y, cex = 0, ...)
   graphics::arrows(x, y, x1 = x + radius / 2 * cosd(270 - angle), y1 = y + radius / 2 * sind(270 - angle), length = arrow.length, code = arrow.code, ...)
   graphics::arrows(x, y, x1 = x + radius / 2 * cosd(90 - angle), y1 = y + radius / 2 * sind(90 - angle), length = arrow.length, code = arrow.code, ...)
 }
@@ -129,6 +129,217 @@ PositionCenterSpoke <- ggplot2::ggproto("PositionCenterSpoke", ggplot2::Position
     data
   }
 )
+
+
+#' Azimuth visualization
+#'
+#' @description
+#' `geom_azimuth()` visualizes axial-directional vector fields using a geom to
+#' produce a new graphical layer, which allows aesthetic options.
+#' This layer can be overlaid on a map to improve visualisation of mapped data.
+#' The geom draws line segments (spokes) centered at (x, y) with a given
+#' orientation (`angle` in degrees) and length (`radius`). By default the spoke
+#' is centered using [`PositionCenterSpoke`], so that the given coordinates mark
+#' the middle of the line. The azimuths are given as angles in degrees increasing clockwise from North.
+#'
+#' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
+#' @param data A data frame. If `NULL`, the default, the data is inherited from
+#'   the plot data as specified in the call to [ggplot2::ggplot()].
+#' @param stat The statistical transformation to use on the data. Defaults to
+#'   `"identity"`.
+#' @param center Logical; if `TRUE` (the default) spokes are centered on (x, y) using
+#'   [`PositionCenterSpoke`]  - useful for axial data. If `FALSE`, behaves like
+#'   [ggplot2::geom_spoke()] (line starts at (x, y)) - useful for directional data
+#'   (especially when in combination with `arrow()`).
+#' @param na.rm If `FALSE`, the default, missing values are removed with a
+#'   warning. If `TRUE`, missing values are silently removed.
+#' @param show.legend Logical. Should this layer be included in the legends?
+#' @param inherit.aes If `FALSE`, overrides the default aesthetics, rather than
+#'   combining with them.
+#' @param ... Other arguments passed on to [ggplot2::layer()]. These are often
+#'   aesthetics (e.g. `colour`, `linetype`, `linewidth`, `alpha`).
+#' @param radius Length of spoke
+#'
+#' @section Aesthetics:
+#' `geom_azimuth()` understands the following aesthetics (required aesthetics in **bold**):
+#' \itemize{
+#'   \item **x**
+#'   \item **y**
+#'   \item angle (in degrees, transformed internally)
+#'   \item radius
+#'   \item colour
+#'   \item alpha
+#'   \item linewidth
+#'   \item linetype
+#' }
+#'
+#' @return A ggplot2 layer that adds axis-like spokes.
+#' @seealso [ggplot2::geom_spoke()], [geom_azimuthpoint()]
+#' @examples
+#' set.seed(20250411)
+#' df <- data.frame(
+#'   x = runif(5), y = runif(5),
+#'   angle_deg = rvm(5, mean = 90, kappa = 10),
+#'   radius = runif(5, 0.1, 2)
+#' )
+#'
+#' if (require("ggplot2")) {
+#'   ggplot(df, aes(x, y)) +
+#'     geom_azimuth(aes(angle = angle_deg), radius = .1, linewidth = 1.2, colour = "blue")
+#'   if (require("grid")) {
+#'     ggplot(df, aes(x, y, radius = radius)) +
+#'       geom_azimuth(aes(angle = angle_deg), center = FALSE, colour = "red", arrow = grid::arrow())
+#'   }
+#' }
+#' @export
+geom_azimuth <- function(mapping = NULL, data = NULL,
+                         stat = "azimuth", center = TRUE,
+                         radius = NULL,
+                         na.rm = FALSE, show.legend = NA,
+                         inherit.aes = TRUE, ...) {
+  position <- if (isTRUE(center)) "center_spoke" else "identity"
+  radius_fact <- if (isTRUE(center)) .5 else 1
+
+  ggplot2::layer(
+    geom = ggplot2::GeomSpoke,
+    mapping = mapping,
+    data = data,
+    stat = StatAzimuth,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = list(
+      radius_fact = radius_fact,
+      default_radius = radius,
+      na.rm = na.rm,
+      ...
+    )
+  )
+}
+
+# A simple internal stat that ensures 'radius' is always numeric
+StatAzimuth <- ggplot2::ggproto("StatAzimuth", ggplot2::Stat,
+  required_aes = c("x", "y", "angle"),
+  compute_panel = function(data, scales, radius_fact = 1, default_radius = NULL) {
+    data$angle <- (90 - as.numeric(data$angle)) * pi / 180
+
+    # If radius is mapped, use it
+    if ("radius" %in% names(data)) {
+      data$radius <- as.numeric(data$radius) * radius_fact
+    } else {
+      # Otherwise use fixed radius
+      fixed <- if (is.null(default_radius)) 1 else default_radius
+      data$radius <- rep(fixed * radius_fact, nrow(data))
+    }
+    data
+  }
+)
+
+
+#' Azimuth + point visualization
+#'
+#' @description
+#' `geom_azimuthpoint()` draws line segments (spokes) like [geom_azimuth()], but also
+#' places a point (marker) at the spoke's center `(x, y)`.
+#'
+#' Aesthetic rules:
+#' - `linewidth`, `linetype` affect the spoke only
+#' - `shape` affects the point only
+#' - `colour`, `alpha` affect both spoke and point
+#' - `size` sets the size of the point only
+#'
+#' @param mapping Set of aesthetic mappings created by [ggplot2::aes()].
+#' @param data A data frame. If `NULL`, the default, the data is inherited from
+#'   the plot data as specified in the call to [ggplot2::ggplot()].
+#' @param stat The statistical transformation to use on the data. Defaults to
+#'   `"identity"`.
+#' @param center Logical; if `TRUE` spokes are centered on (x, y) using
+#'   [`PositionCenterSpoke`]. If `FALSE`, behaves like
+#'   [ggplot2::geom_spoke()] (line starts at (x, y)).
+#' @param na.rm If `FALSE`, the default, missing values are removed with a
+#'   warning. If `TRUE`, missing values are silently removed.
+#' @param show.legend Logical. Should this layer be included in the legends?
+#' @param inherit.aes If `FALSE`, overrides the default aesthetics, rather than
+#'   combining with them.
+#' @param size Size of the point marker (default = 2).
+#' @param ... Other arguments passed on to [geom_azimuth()] and
+#'   [ggplot2::geom_point()]. These may include `arrow`, `fill`, etc.
+#'
+#' @section Aesthetics:
+#' `geom_azimuthpoint()` understands the following aesthetics (required aesthetics in **bold**):
+#' \itemize{
+#'   \item **x**
+#'   \item **y**
+#'   \item angle (in degrees, transformed internally; spoke only)
+#'   \item radius (spoke only)
+#'   \item colour (shared)
+#'   \item alpha (shared)
+#'   \item linewidth (spoke only)
+#'   \item linetype (spoke only)
+#'   \item shape (point only)
+#'   \item size (point only, or via argument)
+#'   \item fill (point only, for shapes that accept fill)
+#' }
+#'
+#' @return A list of ggplot2 layers (spokes + points).
+#' @seealso [geom_azimuth()], [ggplot2::geom_spoke()], [ggplot2::geom_point()]
+#' @examples
+#' set.seed(20250411)
+#' df <- data.frame(
+#'   x = runif(5), y = runif(5),
+#'   angle_deg = rvm(5, mean = 90, kappa = 10),
+#'   radius = runif(5, 0.1, 1),
+#'   group = rep(1:2, length.out = 5)
+#' )
+#'
+#' if (require("ggplot2")) {
+#'   ggplot(data = df, aes(x, y, angle = angle_deg, radius = radius)) +
+#'     geom_azimuthpoint(aes(colour = factor(group), shape = factor(group)),
+#'       linewidth = 1.1, linetype = "dashed",
+#'       size = 3, alpha = 0.8
+#'     )
+#' }
+#'
+#' @export
+geom_azimuthpoint <- function(mapping = NULL, data = NULL,
+                              stat = "identity", center = TRUE,
+                              na.rm = FALSE, show.legend = NA,
+                              inherit.aes = TRUE, size = 2,
+                              ...) {
+  # ----- Spoke layer mapping -----
+  line_mapping <- mapping
+  if (!is.null(line_mapping)) {
+    # drop point-specific aesthetics from line mapping
+    line_mapping <- line_mapping[!names(line_mapping) %in% c("shape")]
+  }
+
+  line_layer <- geom_azimuth(
+    mapping = line_mapping, data = data,
+    stat = stat, center = center,
+    na.rm = na.rm, show.legend = show.legend,
+    inherit.aes = inherit.aes, ...
+  )
+
+  # ----- Point layer mapping -----
+  point_mapping <- mapping
+  if (!is.null(point_mapping)) {
+    # drop spoke-specific aesthetics from point mapping
+    point_mapping <- point_mapping[!names(point_mapping) %in% c("angle", "radius", "linewidth", "linetype")]
+  }
+
+  suppressWarnings(
+    point_layer <- ggplot2::geom_point(
+      mapping = point_mapping, data = data,
+      size = size,
+      inherit.aes = inherit.aes, ...
+    )
+  )
+
+  list(line_layer, point_layer)
+}
+
+
+
 
 #' Quantile-Quantile Linearised Plot for Circular Distributions
 #'
@@ -168,7 +379,7 @@ circular_qqplot <- function(x, axial = TRUE,
                             ylab = NULL, main = "Circular Quantile-Quantile Plot",
                             add_line = TRUE,
                             col = "#B63679FF", ...) {
-  if (axial) {
+  if (isTRUE(axial)) {
     f <- 2
   } else {
     f <- 1
@@ -187,7 +398,7 @@ circular_qqplot <- function(x, axial = TRUE,
     xlab = xlab, ylab = ylab
   )
   graphics::abline(a = 0, b = 1, col = "slategrey")
-  if (add_line) {
+  if (isTRUE(add_line)) {
     graphics::lines(xin, x)
   }
   graphics::points(xin, x, col = col, ...)
@@ -233,7 +444,7 @@ vm_qqplot <- function(x, w = NULL, axial = TRUE, mean = NULL, kappa = NULL,
                       ylab = "Empirical quantile function",
                       main = "von Mises Q-Q Plot",
                       col = "#B63679FF", add_line = TRUE, ...) {
-  if (axial) {
+  if (isTRUE(axial)) {
     f <- 2
   } else {
     f <- 1
@@ -241,14 +452,8 @@ vm_qqplot <- function(x, w = NULL, axial = TRUE, mean = NULL, kappa = NULL,
 
   n <- length(x)
 
-  # if (stretch) {
-  #   k <- 4
-  # } else {
-  #   k <- 2
-  # }
-
   if (is.null(mean)) mean <- circular_mean(x, w = w, axial = axial)
-  if (is.null(kappa)) kappa <- est.kappa(x, w = w, axial = axial)
+  if (is.null(kappa)) kappa <- est.kappa(f * x, w = w)
 
   caption <- bquote(
     bar(alpha) == .(round(mean, 1)) * degree ~ "|" ~ widehat(kappa) == .(round(kappa, 1))
@@ -259,30 +464,11 @@ vm_qqplot <- function(x, w = NULL, axial = TRUE, mean = NULL, kappa = NULL,
 
   edf <- stats::ecdf(xf)
 
-
-  # z <- sind((xf - mean*f) / k)
-  #
-  # z_sort <- sort(z) #|> scales::rescale(c(-1, 1))
-  #
-  #
-  # probs <- seq(0, 1, length.out = n)
-  # quantiles <- qvm(edf(xf), mean = 0, kappa = kappa, from = 0)
-  # quantiles <- qvm(probs, mean = 0, kappa = kappa, from = 0)
-
-  #
-  # sin_q <- sind(quantiles / k)
-
-  # graphics::plot(0, 0, type = "n", xlim = c(-1, 1), ylim = c(-1, 1), asp = 1, xlab = xlab, ylab = ylab, main = main, ...)
-  # graphics::abline(a = 0, b = 1, col = "slategrey")
-  # graphics::points(sin_q, z_sort, pch=20)
-
   tqf <- qvm(edf(xf), mean * f, kappa, from = 0)
 
   graphics::plot(1, type = "n", xlab = xlab, ylab = ylab, xlim = c(0, 360 / f), ylim = c(0, 360 / f))
   graphics::abline(a = 0, b = 1, col = "slategrey")
-  if (add_line) {
-    graphics::lines(tqf / f, xf / f)
-  }
+  if (isTRUE(add_line)) graphics::lines(tqf / f, xf / f)
   graphics::points(tqf / f, xf / f, col = col, ...)
   graphics::mtext(caption, cex = .75)
   graphics::title(main = main, sub = bquote("N" == .(n)))
@@ -364,7 +550,7 @@ rose_histogram <- function(x, ..., main, labels = TRUE, at = NULL,
   bw <- x$binwidth
   y <- x$density
 
-  if (!add) circular_plot(smain = main, labels, at = at, cborder = cborder)
+  if (isFALSE(add)) circular_plot(smain = main, labels, at = at, cborder = cborder)
 
   for (i in seq_along(y)) {
     rose_fan(bks[i], d = bw, radius = y[i], axial = axial, add = TRUE, ...)
@@ -391,7 +577,7 @@ rose_freq <- function(x, bins = NULL, ..., weights = NULL, binwidth = NULL,
     )
   }
 
-  if (axial) {
+  if (isTRUE(axial)) {
     if (!is.null(bins) && is.null(binwidth)) {
       stopifnot(bins > 0)
       binwidth <- 180 / bins # bin width
@@ -475,7 +661,7 @@ rose_bins <- function(n, round = FALSE) {
 
 #' @rdname rose_bw
 rose_binwidth <- function(n, axial = TRUE, ...) {
-  if (axial) {
+  if (isTRUE(axial)) {
     r <- 180
   } else {
     r <- 360
@@ -566,6 +752,8 @@ rose_grid <- function(angles, radii, add = TRUE) {
 #' @importFrom graphics hist title points mtext
 #' @importFrom stats na.omit
 #'
+#' @family rose-plot
+#'
 #' @export
 #'
 #' @examples
@@ -595,7 +783,7 @@ rose <- function(x, weights = NULL, binwidth = NULL, bins = NULL, axial = TRUE,
                  dot_col = "slategrey", stack = FALSE, jitter_factor = 0,
                  grid = FALSE, grid.lines = seq(0, 135, 45), grid.circles = seq(.2, 1, .2),
                  add = FALSE, ...) {
-  if (!add) {
+  if (isFALSE(add)) {
     if (missing(main) || is.null(main)) {
       main <- spatstat.utils::short.deparse(substitute(x))
     }
@@ -606,13 +794,8 @@ rose <- function(x, weights = NULL, binwidth = NULL, bins = NULL, axial = TRUE,
     rose_grid(angles = grid.lines, radii = grid.circles)
   }
 
-  if (axial) {
-    x <- x %% 180
-    # x[x >= 180] <- 180 - 2 * .Machine$double.eps
-  } else {
-    x <- x %% 360
-    # x[x >= 360] <- 360 - 4 * .Machine$double.eps
-  }
+  f <- if (isTRUE(axial)) 2 else 1
+  x <- x %% (360 / f)
 
   freqs <- rose_freq(
     x,
@@ -635,7 +818,7 @@ rose <- function(x, weights = NULL, binwidth = NULL, bins = NULL, axial = TRUE,
 
   if (is.null(sub)) sub <- paste("Bin width:", freqs$binwidth)
   graphics::title(main = NULL, sub = sub, ylab = NULL)
-  graphics::mtext(mtext)
+  graphics::mtext(mtext, font = 2)
 
   if (muci) rose_stats(x, weights = weights, axial = axial)
   invisible(freqs)
@@ -657,6 +840,7 @@ rose <- function(x, weights = NULL, binwidth = NULL, bins = NULL, axial = TRUE,
 #'
 #' @importFrom graphics segments polygon
 #' @name rose_geom
+#' @family rose-plot
 #' @examples
 #' angles <- c(0, 10, 45)
 #' radius <- c(.7, 1, .2)
@@ -672,9 +856,9 @@ rose_line <- function(x, radius = 1, axial = TRUE, add = TRUE, ...) {
   tx <- radius * cos(xrad)
   ty <- radius * sin(xrad)
 
-  if (!add) circular_plot()
+  if (isFALSE(add)) circular_plot()
   graphics::segments(0, 0, tx, ty, ...)
-  if (axial) {
+  if (isTRUE(axial)) {
     graphics::segments(0, 0, -tx, -ty, ...)
   }
   invisible()
@@ -694,10 +878,10 @@ rose_fan <- function(x, d, radius = 1, axial = TRUE, add = TRUE, ...) {
   xx <- c(0, tx, 0)
   yy <- c(0, ty, 0)
 
-  if (!add) circular_plot()
+  if (isFALSE(add)) circular_plot()
 
   graphics::polygon(x = xx, y = yy, ...)
-  if (axial) {
+  if (isTRUE(axial)) {
     graphics::polygon(x = -xx, y = -yy, ...)
   }
 }
@@ -729,8 +913,9 @@ rose_fan <- function(x, d, radius = 1, axial = TRUE, add = TRUE, ...) {
 #' @param ... optional arguments to `circular_plot()` if add is `FALSE`.
 #' @importFrom ggplot2 alpha
 #'
-#' @seealso [rose()] for plotting the rose diagram, and
-#' [circular_mean()], [circular_median()], [circular_sample_median()],
+#' @family rose-plot
+#'
+#' @seealso [circular_mean()], [circular_median()], [circular_sample_median()],
 #' [confidence_interval()], [confidence_interval_fisher()],
 #' [circular_sd()], [circular_IQR()], [circular_sample_median_deviation()]
 #' for statistical parameters.
@@ -813,6 +998,8 @@ rose_stats <- function(x, weights = NULL, axial = TRUE, avg = c("mean", "median"
 #'
 #' @importFrom graphics points
 #'
+#' @family rose-plot
+#'
 #' @return A list with information on the plot
 #' @export
 #'
@@ -826,21 +1013,21 @@ rose_stats <- function(x, weights = NULL, axial = TRUE, avg = c("mean", "median"
 #' plot_points(x, jitter_factor = .2, add = FALSE)
 #'
 #' # stacked dots:
-#' plot_points(x, stack = TRUE, binwidth = 3, add = FALSE)
+#' plot_points(x, stack = TRUE, binwidth = 3, add = FALSE, xpd = TRUE)
 plot_points <- function(x, axial = TRUE, stack = FALSE, binwidth = 1, cex = 1, sep = 0.025, jitter_factor = 0, ..., scale = 1.1, add = TRUE,
                         main = NULL, labels = TRUE,
                         at = seq(0, 360 - 45, 45), cborder = TRUE) {
-  if (!add) {
+  if (isFALSE(add)) {
     if (missing(main) || is.null(main)) {
       main <- spatstat.utils::short.deparse(substitute(x))
     }
     circular_plot(main = main, labels = labels, at = at, cborder = cborder)
   }
 
-  f <- as.numeric(axial) + 1
+  f <- if (isTRUE(axial)) 2 else 1
 
-  if (!stack) {
-    if (axial) {
+  if (isFALSE(stack)) {
+    if (isTRUE(axial)) {
       x_shift <- (x + 180) %% 360
       x <- c(x, x_shift)
     }
@@ -853,7 +1040,7 @@ plot_points <- function(x, axial = TRUE, stack = FALSE, binwidth = 1, cex = 1, s
     graphics::points(z, y, cex = cex, ...)
   } else {
     freqs <- rose_freq(x, axial = axial, binwidth = binwidth)
-    if (axial) {
+    if (isTRUE(axial)) {
       freqs$mids <- freqs$mids %% 180
       freqs$count <- rep(freqs$count, 2)
       freqs$mids <- c(freqs$mids, freqs$mids + 180)
@@ -899,11 +1086,9 @@ calc_circular_density <- function(x, z, kappa, axial) {
 
 
 circular_density <- function(x, z = NULL, kappa, na.rm = TRUE, from = 0, to = 360, n = 512, axial = TRUE) {
-  # f <- as.numeric(axial) + 1
-  # x <- x * f
+  f <- if (isTRUE(axial)) 2 else 1
 
-  if (is.null(kappa)) kappa <- est.kappa(x, axial = axial)
-
+  if (is.null(kappa)) kappa <- est.kappa(f * x)
 
   if (is.null(z)) {
     z <- seq(from = from, to = to, length = n)
@@ -914,7 +1099,7 @@ circular_density <- function(x, z = NULL, kappa, na.rm = TRUE, from = 0, to = 36
     namez <- deparse(substitute(z))
     z.na <- is.na(z)
     if (any(z.na)) {
-      if (na.rm) {
+      if (isTRUE(na.rm)) {
         z <- z[!z.na]
       } else {
         stop("z contains missing values")
@@ -932,13 +1117,13 @@ circular_density <- function(x, z = NULL, kappa, na.rm = TRUE, from = 0, to = 36
 circular_lines <- function(x, y, join = FALSE, nosort = FALSE, offset = 1.1, shrink = 1, axial = TRUE, ...) {
   x <- deg2rad(90 - x)
 
-  if (axial) {
+  if (isTRUE(axial)) {
     x <- c(x, x + pi)
     y <- rep(y, 2)
   }
 
   n <- length(x)
-  if (!nosort) {
+  if (isFALSE(nosort)) {
     xorder <- order(x)
     x <- x[xorder]
     y <- y[xorder]
@@ -969,44 +1154,46 @@ circular_lines <- function(x, y, join = FALSE, nosort = FALSE, offset = 1.1, shr
 #'
 #' Plot the multiples of a von Mises density distribution
 #'
-#' @param x Data to be plotted. A numeric vector containing angles (in degrees).
-#' @param kappa Concentration parameter for the von Mises distribution.
+#' @param x numeric. Data to be plotted, i.e. vector containing angles (in degrees).
+#' @param kappa numeric. Concentration parameter for the von Mises distribution.
 #' Small kappa gives smooth density lines. Will be estimated using [est.kappa()] if not provided.
 #' @param axial Logical. Whether data are uniaxial (`axial=FALSE`)
 #' or biaxial (`TRUE`, the default).
-#' @param n the number of equally spaced points at which the density is to be estimated.
+#' @param n integer. the number of equally spaced points at which the density is to be estimated.
 #' @param norm.density logical. Normalize the density?
-#' @param scale radius of plotted circle. Default is `1.1`.
-#' @param shrink parameter that controls the size of the plotted function. Default is 1.
+#' @param scale numeric. radius of plotted circle. Default is `1.1`.
+#' @param shrink numeric. parameter that controls the size of the plotted function. Default is 1.
 #' @param grid logical. Whether a grid should be added.
 #' @param ... Further graphical parameters may also be supplied as arguments.
 #' @param add logical. Add to existing plot? (`TRUE` by default).
 #' @inheritParams circular_plot
 #'
 #' @seealso [dvm()]
+#' @family rose-plot
 #' @return plot or calculated densities as numeric vector
 #' @export
 #'
 #' @examples
-#' # Plot the rose histogram first:
-#' rose(san_andreas$azi, dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21)
+#' # Plot density inside plot only:
+#' rose(san_andreas$azi, grid = TRUE)
+#' plot_density(san_andreas$azi,
+#'   kappa = 100, col = "#51127CFF",
+#'   add = TRUE, lwd = 3
+#' )
 #'
 #' # Add density curve outside of main plot:
+#' rose(san_andreas$azi, dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21)
 #' plot_density(san_andreas$azi,
-#'   kappa = 100, col = "#51127CFF", shrink = 1.5,
-#'   norm.density = FALSE
+#'   kappa = 100,
+#'   scale = 1.1, shrink = 3, xpd = NA,
+#'   col = "#51127CFF"
 #' )
-#'
-#' # Plot density inside plot only:
-#' plot_density(san_andreas$azi,
-#'   kappa = 100, col = "#51127CFF", add = FALSE,
-#'   scale = .5, shrink = 2, norm.density = TRUE, grid = TRUE
-#' )
-plot_density <- function(x, kappa = NULL, axial = TRUE, n = 512, norm.density = FALSE, ...,
-                         scale = 1.1, shrink = 1,
+plot_density <- function(x, kappa = NULL, axial = TRUE, n = 512L, norm.density = TRUE,
+                         ...,
+                         scale = 0, shrink = 1,
                          add = TRUE, main = NULL, labels = TRUE,
                          at = seq(0, 360 - 45, 45), cborder = TRUE, grid = FALSE) {
-  if (!add) {
+  if (isFALSE(add)) {
     if (missing(main) || is.null(main)) {
       main <- spatstat.utils::short.deparse(substitute(x))
     }
