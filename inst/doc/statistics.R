@@ -60,17 +60,19 @@ rose(san_andreas$azi,
   dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21
 )
 
-# add the density curve
+# add the density curve as a corona plot:
 plot_density(san_andreas$azi, kappa = 20, col = "#51127CFF", scale = 1.1, shrink = 2, xpd = NA)
 
 ## ----rose2, echo=TRUE---------------------------------------------------------
+# rose diagram
 rose(san_andreas.por$azi,
-  weights = w, main = "PoR",
+  weights = w, main = "Pole of Rotation", origin.text = "PoR",
   dots = TRUE, stack = TRUE, dot_cex = 0.5, dot_pch = 21
 )
+# add density corona
 plot_density(san_andreas.por$azi, kappa = 20, col = "#51127CFF", scale = 1.1, shrink = 2, xpd = NA)
 
-# show the predicted direction
+# add predicted direction as streight line
 rose_line(135, radius = 1.1, col = "#FB8861FF")
 
 ## ----qqplot, echo=TRUE--------------------------------------------------------

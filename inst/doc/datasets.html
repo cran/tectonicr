@@ -12,7 +12,7 @@
 
 <meta name="author" content="Tobias Stephan" />
 
-<meta name="date" content="2025-12-11" />
+<meta name="date" content="2026-08-28" />
 
 <title>Handling large datasets</title>
 
@@ -341,7 +341,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Handling large datasets</h1>
 <h4 class="author">Tobias Stephan</h4>
-<h4 class="date">2025-12-11</h4>
+<h4 class="date">2026-08-28</h4>
 
 
 
@@ -349,7 +349,8 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 to retrieve relative plate motions parameters from a set of plate
 motions.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(tectonicr)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># load ggplot library</span></span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># load ggplot library</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; Warning: package &#39;ggplot2&#39; was built under R version 4.5.3</span></span></code></pre></div>
 <div id="larger-data-sets" class="section level2">
 <h2>Larger Data Sets</h2>
 <p><strong>tectonicr</strong> also handles larger data sets. A subset of
@@ -658,7 +659,7 @@ coordinates and azimuths as well as the deviations can be viewed by:</p>
 <span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="fu">head</span>(results<span class="sc">$</span>result)</span>
 <span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="co">#&gt;      azi.PoR prd       dev     nchisq      cdist   lon.PoR  lat.PoR  distance</span></span>
 <span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt; 1 173.240166 135 -38.24017 0.18053214 0.38311043 -85.46364 59.05548 -2.446542</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; 2   1.058195 135 -46.05820 2.21486507 0.51846479 -78.16683 60.50445 -2.751949</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="co">#&gt; 2   1.058195 135 -46.05820 0.26189597 0.51846479 -78.16683 60.50445 -2.751949</span></span>
 <span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="co">#&gt; 3 147.609558 135 -12.60956 0.01962975 0.04765752 -84.55317 59.38025 -2.705483</span></span>
 <span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="co">#&gt; 4 163.607388 135 -28.60739 0.10103489 0.22925429 -85.74431 59.73632 -3.162091</span></span>
 <span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="co">#&gt; 5 152.233017 135 -17.23302 0.03666381 0.08776909 -84.31053 61.68018 -4.988116</span></span>
@@ -676,7 +677,7 @@ azimuths can be displayed by</p>
 <span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="co">#&gt; kurtosis       2.78636137</span></span>
 <span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="co">#&gt; conf95         4.17687006</span></span>
 <span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="co">#&gt; dispersion     0.09858997</span></span>
-<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; norm_chisq     0.05290640</span></span></code></pre></div>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="co">#&gt; norm_chisq     0.03297594</span></span></code></pre></div>
 <p>Statistical test results are shown by</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a>results<span class="sc">$</span>test</span>
 <span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt; $C</span></span>

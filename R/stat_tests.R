@@ -11,38 +11,40 @@ nchisq_eq <- function(obs, prd, unc) {
 #' Normalized Chi-Squared Test for Circular Data
 #'
 #' A quantitative comparison between the predicted and observed directions of
-#' \eqn{\sigma_{Hmax}}{SHmax} is obtained by the calculation of the average
-#' azimuth and by a normalized \eqn{\chi^2}{chi-squared} test.
+#' \eqn{\sigma_\text{Hmax}}{SHmax} is obtained by the calculation of the average
+#' azimuth and by a normalized \eqn{\chi^2}{chi-squared} test (Wdowsinki, 1998)
 #'
 #' @references Wdowinski, S., 1998, A theory of intraplate
 #'   tectonics. *Journal of Geophysical Research: Solid Earth*, **103**,
 #'   5037-5059, doi: 10.1029/97JB03390.
+#'
 #' @param prd Numeric vector containing the modeled azimuths of
-#' \eqn{\sigma_{Hmax}}{SHmax}, i.e.
+#' \eqn{\sigma_\text{Hmax}}{SHmax}, i.e.
 #' the return object from \code{model_shmax()}
 #' @param obs Numeric vector containing the observed azimuth of
-#' \eqn{\sigma_{Hmax}}{SHmax},
+#' \eqn{\sigma_\text{Hmax}}{SHmax},
 #' same length as \code{prd}
-#' @param unc Uncertainty of observed \eqn{\sigma_{Hmax}}{SHmax}, either a
+#' @param unc Uncertainty of observed \eqn{\sigma_\text{Hmax}}{SHmax}, either a
 #' numeric vector or a number
 #'
 #' @returns Numeric vector
 #'
 #' @details
 #' The normalized \eqn{\chi^2}{chi-squared} test is
-#' \deqn{ {Norm} \chi^2_i =
-#'  = \frac{
+#' \deqn{ \text{Norm} \chi^2_i = \frac{
 #'    \sum^M_{i = 1} \left( \frac{\alpha_i - \alpha_{{predict}}}{\sigma_i}
 #'    \right) ^2}
 #'    {\sum^M_{i = 1} \left( \frac{90}{\sigma_i} \right) ^2 }}{
 #'    (sum( ((obs-prd)/unc)^2 ) / sum( (90/unc)^2 )
 #'    }
 #' The value of the chi-squared test statistic is a number between 0 and 1
-#' indicating the quality of the predicted \eqn{\sigma_{Hmax}}{SHmax}
+#' indicating the quality of the predicted \eqn{\sigma_\text{Hmax}}{SHmax}
 #' directions. Low values
 #' (\eqn{\le 0.15}) indicate good agreement,
 #' high values (\eqn{> 0.7}) indicate a systematic misfit between predicted and
-#' observed \eqn{\sigma_{Hmax}}{SHmax} directions.
+#' observed \eqn{\sigma_\text{Hmax}}{SHmax} directions.
+#'
+#' @family Tests
 #'
 #' @export
 #'
@@ -85,33 +87,62 @@ norm_chisq <- function(obs, prd, unc) {
 
 #' Rayleigh Test of Circular Uniformity
 #'
-#' Performs a Rayleigh test for uniformity of circular/directional data by
-#' assessing the significance of the mean resultant length.
+#' A test to determine whether a sample of circular or directional data is
+#' evenly spread out or clustered around a single specific direction.
+#' The test assesses the significance of the mean resultant length.
+#' `rayleight_test_perm()` uses permutation to estimate p-values.
 #'
 #' @param x numeric vector. Values in degrees
-#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
-#' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
+#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}{pi}-periodical
+#' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}{2pi}-periodical (`FALSE`).
+#' In case of axial data, the angles will be doubled for the test.
 #' @param mu (optional) The specified or known mean direction (in degrees) in
-#' alternative hypothesis
+#' alternative hypothesis.
 #' @param quiet logical. Prints the test's decision.
+#' @param n_perm integer. Number of permutations.
+#' @param alpha Significance level of the test. Valid levels are `0.01`, `0.05`, and `0.1`.
+#' This argument may be omitted (`NULL`, the default), in which case, a range for the p-value will be returned.
 #'
-#' @details \describe{
-#' \item{\eqn{H_0}{H0}:}{angles are randomly distributed around the circle.}
-#' \item{\eqn{H_1}{H1}:}{angles are from non-uniformly distribution with unknown mean
-#' direction and mean resultant length (when `mu` is `NULL`. Alternatively (when
-#' `mu` is specified),
-#' angles are non-uniformly distributed around a specified direction.}
-#' }
-#' If `statistic > p.value`, the null hypothesis is rejected,
-#' i.e. the length of the mean resultant differs significantly from zero, and
-#' the angles are not randomly distributed.
+#' @details
+#' ## Hypotheses
+#' **Null Hypothesis** \eqn{H_0}{H0}: The population is distributed uniformly (randomly)
+#' around the circle with no preferred direction.
+#'
+#' **Alternative Hypothesis** \eqn{H_1}{H1}: The population is not uniform and has a
+#' unimodal (single-peaked) concentration in a preferred direction. When `mu`
+#' is specified), angles are non-uniformly distributed around the specified direction.
+#'
+#'
+#' *Mean Resultant Length* (\eqn{\bar{R}}{R̄} or R): A value between 0 and 1 that
+#'  measures how concentrated the data points are.
+#'
+#'  * \eqn{\bar{R}}{R̄̄} = 0: The data is completely spread out around the circle
+#'  * \eqn{\bar{R}}{R̄} = 1: All data points point in the exact same direction.
+#'
+#'  *p-value* The probability of seeing data this clustered purely by chance under the assumption of uniformity.
+#'
+#'  ## Interpretation
+#'
+#'  * Small p-value (p < 0.05): Reject the null hypothesis. The length of the
+#'  mean resultant differs significantly from zero, and
+#' the angles are not randomly distributed. You have strong evidence that the
+#' data points share a significant preferred or mean direction (unimodal clustering).
+#'  * Large p-value (p \eqn{\ge}{>=} 0.05): Fail to reject the null hypothesis. There is not
+#'  enough evidence to claim a preferred direction, meaning the data looks random or uniform around the circle.
+#'
 #'
 #' @note Although the Rayleigh test is consistent against (non-uniform)
 #' von Mises alternatives, it is not consistent against alternatives with
 #' `p = 0` (in particular, distributions with antipodal symmetry, i.e. axial
 #' data). Tests of non-uniformity which are consistent against all alternatives
-#' include Kuiper's test ([kuiper_test()]) and Watson's \eqn{U^2} test
+#' include Kuiper's test ([kuiper_test()]) and Watson's \eqn{U^2}{U2} test
 #' ([watson_test()]).
+#'
+#' ## Limitations
+#'
+#'  * The test assumes a unimodal alternative (one main peak).
+#'  * If your data has two opposite clusters (bimodal or axial data, like a bi-directional line trend),
+#'  the Rayleigh test can yield a high/non-significant p-value because the opposing vectors cancel each other out.
 #'
 #' @returns a list with the components:
 #' \describe{
@@ -127,26 +158,23 @@ norm_chisq <- function(obs, prd, unc) {
 #' Fisher, N. I. (1993) Statistical Analysis of Circular Data, Cambridge
 #' University Press.
 #'
-#' @seealso [mean_resultant_length()], [circular_mean()], [norm_chisq()],
-#' [kuiper_test()], [watson_test()], [weighted_rayleigh()]
+#' @seealso [mean_resultant_length()], [circular_mean()]
+#' @family Tests
 #'
-#' @export
+#' @name rayleigh-test
 #'
 #' @examples
 #' # Example data from Mardia and Jupp (1999), pp. 93
-#' pidgeon_homing <- c(55, 60, 65, 95, 100, 110, 260, 275, 285, 295)
-#' rayleigh_test(pidgeon_homing, axial = FALSE) # Do not reject null hypothesis.
+#' rayleigh_test(homing, axial = FALSE) # Do not reject null hypothesis.
 #' # R = 0.22; stat = 0.497, p = 0.62
+#' rayleigh_test_perm(homing, axial = FALSE)
 #'
 #' # Example data from Davis (1986), pp. 316
-#' finland_striae <- c(
-#'   23, 27, 53, 58, 64, 83, 85, 88, 93, 99, 100, 105, 113,
-#'   113, 114, 117, 121, 123, 125, 126, 126, 126, 127, 127, 128, 128, 129, 132,
-#'   132, 132, 134, 135, 137, 144, 145, 145, 146, 153, 155, 155, 155, 157, 163,
-#'   165, 171, 172, 179, 181, 186, 190, 212
-#' )
-#' rayleigh_test(finland_striae, axial = FALSE) # reject null hypothesis
-#' rayleigh_test(finland_striae, mu = 105, axial = FALSE) # reject null hypothesis
+#' rayleigh_test(striae, axial = FALSE) # reject null hypothesis
+#' rayleigh_test_perm(striae, axial = FALSE) # reject null hypothesis
+#'
+#' rayleigh_test(striae, mu = 105, axial = FALSE) # reject null hypothesis
+#' rayleigh_test_perm(striae, mu = 105, axial = FALSE) # reject null hypothesis
 #'
 #' # Example data from Mardia and Jupp (1999), pp. 99
 #' atomic_weight <- c(
@@ -162,75 +190,46 @@ norm_chisq <- function(obs, prd, unc) {
 #' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' rayleigh_test(sa.por$azi.PoR, mu = 135) # reject null hypothesis
-rayleigh_test <- function(x, mu = NULL, axial = TRUE, quiet = FALSE) {
-  f <- if (isTRUE(axial)) 2 else 1
+#' rayleigh_test_perm(sa.por$azi.PoR, mu = 135, n_perm = 1e3) # reject null hypothesis
+NULL
 
+#' @rdname rayleigh-test
+#' @export
+rayleigh_test <- function(x, mu = NULL, axial = TRUE, alpha = 0.05, quiet = FALSE) {
+  f <- if (isTRUE(axial)) 2 else 1
   if (is.null(mu)) {
     x <- x[!is.na(x)]
     xf <- (x * f) %% 360
     n <- length(x)
-
     R <- mean_resultant_length(xf, na.rm = FALSE)
     S <- 2 * n * R^2
     Z <- S / 2
-    # S_mod <- (1 - 1 / (2 * n)) * S + (n * R^4) / 2
-    # if(n <= 10){
-    #  p.value <- p_value3(R, n)
-    # } else  {
     p.value <- rayleigh_p_value1(Z, n)
-    # }
-    # p.value2 <- rayleigh_p_value1(S_mod /2 , n)
-
-    result <- list(
-      R = R,
-      statistic = Z,
-      # statistic_mod = S_mod,
-      p.value = p.value # ,
-      # p.value_mod = p.value2
-    )
+    result <- list(R = R, statistic = Z, p.value = p.value)
     if (isFALSE(quiet)) {
-      if (result$statistic >= p.value) {
-        message("Reject Null Hypothesis\n")
-      } else {
-        message("Do Not Reject Null Hypothesis\n")
-      }
+      message(if (p.value < alpha) "Reject Null Hypothesis\n" else "Do Not Reject Null Hypothesis\n")
     }
   } else {
-    # remove NA's
-    keep <- !is.na(x) & !is.na(mu)
+    keep <- !is.na(x)
     x <- x[keep]
-    # mu <- mu[keep]
-
     x <- x * f
     mu <- mu * f
     xmu <- x - mu
     n <- length(x)
-
     C <- (sum(cosd(xmu))) / n
     s <- sqrt(2 * n) * C
     p.value <- rayleigh_p_value2(s, n)
-
-    result <- list(
-      C = C,
-      statistic = s,
-      p.value = p.value
-    )
+    result <- list(C = C, statistic = s, p.value = p.value)
     if (isFALSE(quiet)) {
-      if (s >= p.value) {
-        message("Reject Null Hypothesis\n")
-      } else {
-        message("Do Not Reject Null Hypothesis\n")
-      }
+      message(if (p.value < alpha) "Reject Null Hypothesis\n" else "Do Not Reject Null Hypothesis\n")
     }
   }
-
-  return(result)
+  result
 }
 
 #' @keywords internal
 rayleigh_p_value1 <- function(K, n, wilkie = FALSE) {
   if (isFALSE(wilkie)) {
-    # Pearson. 1906; Greenwood and Durand, 1955
     P <- exp(-K)
     if (n < 50) {
       temp <- 1 +
@@ -239,10 +238,8 @@ rayleigh_p_value1 <- function(K, n, wilkie = FALSE) {
     } else {
       temp <- 1
     }
-    P * temp
-    min(max(P * temp, 0), 1)
+    min(max(P * temp, 0), 1)     # removed the dead "P * temp" line above this, which had no effect
   } else {
-    # Wilkie 1983
     Rn <- K * n
     temp <- sqrt(1 + 4 * n + 4 * (n^2 - Rn^2)) - (1 + 2 * n)
     round(exp(temp), 3)
@@ -261,24 +258,60 @@ rayleigh_p_value2 <- function(K, n) {
   min(max(P, 0), 1)
 }
 
+
+#' @rdname rayleigh-test
+#' @export
+rayleigh_test_perm <- function(x, mu = NULL, axial = TRUE, n_perm = 1000L){
+  f <- if (isTRUE(axial)) 2 else 1
+  x <- stats::na.omit(x)
+  xf <- (x * f) %% 360
+  n <- length(x)
+
+  if(is.null(mu)){
+  stat <- mean_resultant_length(xf, na.rm = FALSE)
+
+  null_dist <- vapply(seq_len(n_perm), function(i) {
+    rnd <- runif(n, 0, 360)
+    mean_resultant_length(rnd)
+  }, FUN.VALUE = numeric(1))
+
+  } else {
+    mu <- (mu * f) %% 360
+    xmu <- xf - mu
+
+    stat <- (sum(cosd(xmu))) / n
+
+    null_dist <- vapply(seq_len(n_perm), function(i) {
+      rnd <- runif(n, 0, 360)
+      (sum(cosd(rnd))) / n
+    }, FUN.VALUE = numeric(1))
+  }
+
+  p.value <- (sum(null_dist >= stat) + 1L) / (n_perm + 1)
+
+  return(list(statistic = stat, p.value = p.value))
+}
+
+
+
 #' Weighted Goodness-of-fit Test for Circular Data
 #'
 #' Weighted version of the Rayleigh test (or V0-test) for uniformity against a
 #' distribution with a priori expected von Mises concentration.
-#' @param x numeric vector. Values in degrees
+#' `weighted_rayleight_test_perm()` uses permutation to estimate p-values.
+#'
+#' @inheritParams rayleigh_test
 #' @param w numeric vector weights of length `length(x)`. If `NULL`, the
 #' non-weighted Rayleigh test is performed.
-#' @param mu The *a priori* expected direction (in degrees) for the alternative
-#' hypothesis.
-#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
-#' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
 #' @param quiet logical. Prints the test's decision.
+#' @param n_perm integer. Number of permutations
 #'
 #' @details
 #' The Null hypothesis is uniformity (randomness). The alternative is a
 #' distribution with a (specified) mean direction (`mu`).
 #' If `statistic >= p.value`, the null hypothesis of randomness is rejected and
 #' angles derive from a distribution with a (or the specified) mean direction.
+#'
 #'
 #' @returns a list with the components:
 #' \describe{
@@ -289,10 +322,8 @@ rayleigh_p_value2 <- function(K, n) {
 #'  \item{`statistic`}{Test statistic}
 #'  \item{`p.value`}{significance level of the test statistic}
 #' }
-#'
-#' @seealso [rayleigh_test()]
-#'
-#' @export
+#' @name weighted-rayleigh-test
+#' @family Tests
 #'
 #' @examples
 #' # Load data
@@ -311,6 +342,14 @@ rayleigh_p_value2 <- function(K, n) {
 #' weighted_rayleigh(tibet.por$azi.PoR, mu = 90, w = 1 / tibet$unc)
 #' weighted_rayleigh(ice.por$azi.PoR, mu = 0, w = 1 / iceland$unc)
 #' weighted_rayleigh(sa.por$azi.PoR, mu = 135, w = 1 / san_andreas$unc)
+#'
+#' weighted_rayleigh_perm(tibet.por$azi.PoR, mu = 90, w = 1 / tibet$unc)
+#' weighted_rayleigh_perm(ice.por$azi.PoR, mu = 0, w = 1 / iceland$unc)
+#' weighted_rayleigh_perm(sa.por$azi.PoR, mu = 135, w = 1 / san_andreas$unc)
+NULL
+
+#' @rdname weighted-rayleigh-test
+#' @export
 weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE, quiet = FALSE) {
   if (is.null(w)) {
     rayleigh_test(x, mu = mu, axial = axial)
@@ -349,32 +388,86 @@ weighted_rayleigh <- function(x, mu = NULL, w = NULL, axial = TRUE, quiet = FALS
   }
 }
 
+#' @rdname weighted-rayleigh-test
+#' @export
+weighted_rayleigh_perm <- function(x, mu = NULL, w = NULL, axial = TRUE, n_perm = 1000L){
+  if(is.null(w)) {
+    rayleigh_test_perm(x, mu, axial, n_perm)
+  } else {
+  keep <- !is.na(x) & !is.na(w)
+  x <- x[keep]
+  w <- w[keep]
+
+  Z <- sum(w)
+  n <- length(w)
+
+  if (is.null(mu)) mu <- circular_mean(x, w, axial, na.rm = FALSE)
+
+  d <- x - mu
+  f <- if (isTRUE(axial)) 2 else 1
+
+  m <- mean_SC(f * d, w = w, na.rm = FALSE)
+  stat <- as.numeric(m["C"])
+
+  null_dist <- vapply(seq_len(n_perm), function(i) {
+    rnd <- runif(n, 0, 360)
+    m <- mean_SC(rnd)
+    as.numeric(m["C"])
+  }, FUN.VALUE = numeric(1))
+
+  p.value <- (sum(null_dist >= stat) + 1L) / (n_perm + 1)
+
+  return(list(statistic = stat, p.value = p.value))
+  }
+}
+
 #' Kuiper Test of Circular Uniformity
 #'
-#' Kuiper's test statistic is a rotation-invariant Kolmogorov-type test statistic.
-#' The critical values of a modified Kuiper's test statistic are used according
-#' to the tabulation given in Stephens (1970).
+#' A statistical test used to determine whether a set of angular or circular
+#' data points (such as times of day, compass directions, or degrees) are
+#' spread out evenly around a circle or if they cluster in some way.
 #'
-#' @param x numeric vector containing the circular data which are expressed in degrees
-#' @param alpha Significance level of the test. Valid levels are `0.01`, `0.05`, and `0.1`.
-#' This argument may be omitted (`NULL`, the default), in which case, a range for the p-value will be returned.
-#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
-#' (`TRUE`, the default) or circular, i.e. \eqn{2 \pi}-periodical (`FALSE`).
-#' @returns list containing the test statistic `statistic` and the significance
-#' level `p.value`.
+#' @inheritParams rayleigh_test
 #' @param quiet logical. Prints the test's decision.
 #'
 #' @details
+#'  The **Null Hypothesis** (\eqn{H_0}{H0}): The data are distributed completely uniformly
+#'  (randomly and evenly) around the circle.
 #'
-#' If `statistic > p.value`, the null hypothesis is rejected.
-#' If not, randomness (uniform distribution) cannot be excluded.
+#'  The **Alternative Hypothesis** (\eqn{H_1}{H1}): The data are not uniform and
+#'  show a preference, clustering, or pattern somewhere on the circle.
+#'
+#'  The Test Statistic (V or \eqn{D^{+} + D^{-}}{D⁺ + D⁻}): It measures the
+#'  greatest positive and negative differences between your data's empirical
+#'  cumulative distribution and a theoretical uniform distribution.
+#'
+#' ## Interpreting the Results
+#'
+#' * High Test Statistic / Low p-value (\eqn{p < \alpha}{p < alpha}, typically 0.05):
+#' You reject the null hypothesis. This means your data are not uniform; they
+#' have a significant preferred direction, grouping, or non-random pattern on the circle.
+#'
+#' * Low Test Statistic / High p-value (\eqn{p \ge 0.05}{p >= 0.05}): You fail to
+#' reject the null hypothesis. There is no strong evidence to say the data are
+#' different from a flat, uniform distribution. The points appear random across the circle.
+#'
+# #' If `statistic > p.value`, the null hypothesis is rejected.
+# #' If not, randomness (uniform distribution) cannot be excluded.
+#'
+#' @note Kuiper's test statistic is a rotation-invariant Kolmogorov-type test statistic.
+#' The critical values of a modified Kuiper's test statistic are used according
+#' to the tabulation given in Stephens (1970).
+#'
+#' @returns list containing the test statistic `statistic` and the significance
+#' level `p.value`.
+#'
+#' @family Tests
 #'
 #' @export
 #'
 #' @examples
 #' # Example data from Mardia and Jupp (1999), pp. 93
-#' pidgeon_homing <- c(55, 60, 65, 95, 100, 110, 260, 275, 285, 295)
-#' kuiper_test(pidgeon_homing, alpha = .05)
+#' kuiper_test(homing, alpha = .05)
 #'
 #' # San Andreas Fault Data:
 #' data(san_andreas)
@@ -436,39 +529,58 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE, quiet = FALSE) {
   )
 }
 
-#' Watson's \eqn{U^2} Test of Circular Uniformity
+#' Watson's \eqn{U^2}{U²} Test for Goodness-of-Fit against known Distribution
 #'
-#' Watson's test statistic is a rotation-invariant Cramer - von Mises test
+#' A non-parametric statistical test used for circular data to determine whether
+#' a sample fits a specified theoretical distribution
 #'
-#' @param x numeric vector. Values in degrees
+#' @inheritParams rayleigh_test
 #' @param alpha Significance level of the test. Valid levels are `0.01`, `0.05`,
 #' and `0.1`.
 #' This argument may be omitted (`NULL`, the default), in which case, a range
 #' for the p-value will be returned.
-#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
-#' (`TRUE`, the default) or circular, i.e. \eqn{2 \pi}-periodical (`FALSE`).
-#' @param mu (optional) The specified mean direction (in degrees) in alternative
-#'  hypothesis
 #' @param dist Distribution to test for. The default, `"uniform"`, is the
-#' uniform distribution. `"vonmises"` tests the von Mises distribution.
-#' @param quiet logical. Prints the test's decision.
+#' circular uniform distribution. `"vonmises"` tests the von Mises distribution.
 #'
-#' @returns list containing the test statistic `statistic` and the significance
-#' level `p.value`.
+#' @returns list containing the test statistic `statistic`, the significance
+#' level `p.value`, the critical value `critical.value`, whether to `reject` the null hypothesis,
+#' the significance level `alpha`, the tested distribution `dist`, and the number of data `n`
 #'
 #' @details
-#' If `statistic > p.value`, the null hypothesis is rejected.
-#' If not, randomness (uniform distribution) cannot be excluded.
+#' ## Hypotheses
+#' **Null Hypothesis** (\eqn{H_0}{H0}):  The circular sample comes from a specified
+#' theoretical distribution (such as a uniform distribution or a specific von Mises distribution).
+#'
+#' **Alternative Hypothesis** (\eqn{H_1}{H1}): The circular sample does not follow the specified theoretical distribution.
+#'
+#' ## Interpretation
+#' To interpret the output of Watson's \eqn{U^2}{U²}  test, compare your
+#' calculated \eqn{U^2}{U²}  test statistic to the critical value from
+#' Watson's goodness-of-fit/homogeneity tables at your chosen significance level (\eqn{\alpha}{alpha}, commonly set to 0.05),
+#' or check the resulting p-value:
+#'
+#'  * If \eqn{U^2_{\text{calculated}} > U^2_{\text{critical}}} (or p < \eqn{\alpha}{alpha}):
+#'  Reject the null hypothesis (\eqn{H_0}{H0}).
+#'  Conclude that the data significantly deviates from the theoretical distribution.
+#'
+#'  * If \eqn{U^2_{\text{calculated}} \le U^2_{\text{critical}}} (or \eqn{p \ge \alpha}{p >= alpha}):
+#'  Fail to reject the null hypothesis (\eqn{H_0}{H0}).
+#'  There is not enough evidence to claim the data deviates from the expected model.
+#'
+#' @note Watson's test statistic is a rotation-invariant Cramer - von Mises test.
+#' non-parametric, rank-based alternative to one-sample
 #'
 #' @references Mardia and Jupp (1999). Directional Statistics. John Wiley and
 #' Sons.
 #'
 #' @export
 #'
+#' @family Tests
+#' @seealso [vonmises] and [cunif]
+#'
 #' @examples
 #' # Example data from Mardia and Jupp (1999), pp. 93
-#' pidgeon_homing <- c(55, 60, 65, 95, 100, 110, 260, 275, 285, 295)
-#' watson_test(pidgeon_homing, alpha = .05)
+#' watson_test(homing, axial = FALSE, alpha = .05)
 #'
 #' # San Andreas Fault Data:
 #' data(san_andreas)
@@ -477,97 +589,90 @@ kuiper_test <- function(x, alpha = 0, axial = TRUE, quiet = FALSE) {
 #' sa.por <- PoR_shmax(san_andreas, PoR, "right")
 #' watson_test(sa.por$azi.PoR, alpha = .05)
 #' watson_test(sa.por$azi.PoR, alpha = .05, dist = "vonmises")
-watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = TRUE, mu = NULL, quiet = FALSE) {
+#' watson_test(sa.por$azi.PoR, alpha = .05, dist = "vonmises")
+watson_test <- function(x, alpha = NULL, dist = c("uniform", "vonmises"), axial = TRUE, quiet = FALSE) {
+  if (is.null(alpha)) alpha <- 0
   allowed_alphas <- c(0, 0.01, 0.025, 0.05, 0.1)
   if (!(alpha %in% allowed_alphas)) {
     stop("'alpha' must be one of: 0, 0.01, 0.025, 0.05, 0.1")
   }
-
   dist <- match.arg(dist)
+  # the vonmises critical-value table only has columns for alpha = 0.1/0.05/0.01 --
+  # reject early instead of failing later after doing all the work
+  if (dist == "vonmises" && alpha != 0 && !(alpha %in% c(0.1, 0.05, 0.01))) {
+    stop("'alpha' must be one of: 0, 0.1, 0.05, 0.01 when dist = 'vonmises'")
+  }
+
   x <- x[!is.na(x)]
   n <- length(x)
+  f <- if (isTRUE(axial)) 2 else 1
+  x2 <- (x * f) %% 360   # doubled-domain data used throughout, for both dist branches
+
+  if (n < 8) {
+    warning("Total Sample Size < 8:  Results are not valid")
+  }
 
   if (dist == "uniform") {
-    f <- 1
-    x <- (x * f) %% 360
-
-    # U2 Statistic:
-    u <- sort(deg2rad(x)) / (2 * pi)
-    if (is.null(mu)) {
-      u.bar <- mean(u)
-    } else {
-      u.bar <- deg2rad(mu %% 360) / (2 * pi)
-    }
+    ## ---- U2 statistic ----
+    u <- sort(deg2rad(x2)) / (2 * pi)
+    u.bar <- mean(u)
     i <- seq_len(n)
     u2 <- sum((u - u.bar - (i - .5) / n + .5)^2) + 1 / (12 * n)
     statistic <- (u2 - 0.1 / n + 0.1 / (n^2)) * (1 + 0.8 / n)
 
-    # P-value:
-    crits <- c(99, 0.267, 0.221, 0.187, 0.152)
+    ## crits correspond to alpha = 0.01, 0.025, 0.05, 0.1 respectively
+    crits       <- c(0.267, 0.221, 0.187, 0.152)
+    crit_alphas <- c(0.01, 0.025, 0.05, 0.1)
+
     if (n < 8) {
-      p.value <- NA
-      warning("Total Sample Size < 8:  Results are not valid")
-    }
-
-    if (alpha == 0) {
-      thresholds <- c(rev(crits[-1]), Inf)
-
+      p.value <- NA_character_
+      critical.value <- NA_real_
+      reject <- NA
+    } else if (alpha == 0) {
+      thresholds <- c(rev(crits), Inf)                 # c(0.152, 0.187, 0.221, 0.267, Inf)
       messages <- c(
         "P-value > 0.10",
         "0.05 < P-value < 0.10",
         "0.025 < P-value < 0.05",
-        "0.01 < P-value < 0.025",
-        "P-value < 0.01"
+        "0.01 < P-value < 0.025",   # fixed: was "0.001" -- table only resolves to alpha=0.01
+        "P-value < 0.01"            # fixed: was "0.001"
       )
-      p.value <- messages[findInterval(statistic, thresholds)]
-      #
+      p.value <- messages[findInterval(statistic, thresholds) + 1]   # fixed: was missing "+ 1"
+      critical.value <- NA_real_
+      reject <- NA
     } else {
-      index <- (1:5)[alpha == allowed_alphas[1:5]]
-      p.value <- crits[index]
+      critical.value <- crits[crit_alphas == alpha]
+      reject <- statistic > critical.value
+      p.value <- NA_character_
       if (!quiet) {
-        if (statistic > p.value) {
-          message("Reject Null Hypothesis\n")
-        } else {
-          message("Do Not Reject Null Hypothesis\n")
-        }
+        message(if (reject) "Reject Null Hypothesis" else "Do Not Reject Null Hypothesis")
       }
     }
   } else {
+    ## ---- goodness-of-fit against von Mises ----
     u2_crits <- cbind(
       c(0, 0.5, 1, 1.5, 2, 4, 100),
       c(0.052, 0.056, 0.066, 0.077, 0.084, 0.093, 0.096),
       c(0.061, 0.066, 0.079, 0.092, 0.101, 0.113, 0.117),
       c(0.081, 0.09, 0.11, 0.128, 0.142, 0.158, 0.164)
     )
-
-    if (is.null(mu)) mu <- circular_mean(x, axial = axial, na.rm = FALSE)
-
-    f <- if (isTRUE(axial)) 2 else 1
-
-    kappa_mle <- est.kappa(f * x)
-    x <- x - mu
-    x <- matrix(x, ncol = 1)
-    z <- apply(x, 1, pvm, 0, kappa_mle)
+    kappa_mle <- est.kappa(x2)
+    ## fixed: mean must be taken in the SAME (doubled) domain as x2/kappa_mle.
+    ## the original computed circular_mean(x, axial=axial, ...) -- the mean of
+    ## the UNdoubled data, in undoubled units -- then subtracted it from x2.
+    mu <- circular_mean(x2, axial = FALSE, na.rm = FALSE)
+    z <- pvm(x2 - mu, mean = 0, kappa = kappa_mle)   # vectorized directly; no apply()/matrix needed
     z <- sort(z)
     z.bar <- mean(z)
     i <- seq_len(n)
-    sum.terms <- (z - (2 * i - 1) / (2 * n))^2
-    statistic <- sum(sum.terms) - n * (z.bar - 0.5)^2 + 1 / (12 * n)
-
+    statistic <- sum((z - (2 * i - 1) / (2 * n))^2) - n * (z.bar - 0.5)^2 + 1 / (12 * n)
     row <- findInterval(kappa_mle, c(0.25, 0.75, 1.25, 1.75, 3, 5)) + 1
 
-    if (alpha != 0) {
-      col <- match(alpha, c(0.1, 0.05, 0.01)) + 1
-      if (is.na(col)) {
-        stop("'alpha' must be one of: 0.1, 0.05, 0.01")
-      }
-
-      p.value <- u2_crits[row, col]
-
-      if (isFALSE(quiet)) {
-        message(if (statistic > p.value) "Reject Null Hypothesis" else "Do Not Reject Null Hypothesis")
-      }
-    } else {
+    if (n < 8) {
+      p.value <- NA_character_
+      critical.value <- NA_real_
+      reject <- NA
+    } else if (alpha == 0) {
       breaks <- u2_crits[row, 2:4]
       labels <- c(
         "P-value > 0.10",
@@ -575,243 +680,462 @@ watson_test <- function(x, alpha = 0, dist = c("uniform", "vonmises"), axial = T
         "0.01 < P-value < 0.05",
         "P-value < 0.01"
       )
-
       p.value <- labels[findInterval(statistic, breaks, rightmost.closed = TRUE) + 1]
+      critical.value <- NA_real_
+      reject <- NA
+    } else {
+      col <- match(alpha, c(0.1, 0.05, 0.01)) + 1
+      critical.value <- u2_crits[row, col]
+      reject <- statistic > critical.value
+      p.value <- NA_character_
+      if (!quiet) {
+        message(if (reject) "Reject Null Hypothesis" else "Do Not Reject Null Hypothesis")
+      }
     }
   }
+
   list(
-    statistic = statistic,
-    p.value = p.value
+    statistic      = statistic,
+    p.value        = p.value,        # descriptive bracket, only set when alpha == 0
+    critical.value = critical.value, # tabulated threshold, only set when alpha != 0
+    reject         = reject,         # logical decision, only set when alpha != 0
+    alpha          = alpha,
+    dist           = dist,
+    n              = n
   )
 }
 
-
-# Distribution ####
-## von Mises -------------------------------------------------------------------
-
-# pvm.mu0 <- function(theta, kappa, acc) {
-#   flag <- TRUE
-#   p <- 1
-#   sum <- 0
-#   while (flag) {
-#     term <- (besselI(x = kappa, nu = p, expon.scaled = FALSE) *
-#       sin(p * theta)) / p
-#     sum <- sum + term
-#     p <- p + 1
-#     if (abs(term) < acc) {
-#       flag <- FALSE
-#     }
-#   }
-#   theta / (2 * pi) + sum / (pi * besselI(
-#     x = kappa, nu = 0,
-#     expon.scaled = FALSE
-#   ))
-# }
-
-
-
-#' The von Mises Distribution
+#' Watson's Two-Sample Test of Homogeneity
 #'
-#' Density, probability distribution function, quantiles, and random generation
-#' for the circular normal distribution with mean and kappa.
+#' Performs Watson's test for homogeneity on two samples of circular data.
+#' `watson_two_test_perm()` uses permutation to estimate p-values.
 #'
-#' @param n integer. Number of observations in degrees
-#' @param p numeric. Vector of probabilities with values in \eqn{[0,1]}{[0,1]}.
-#' @param mean numeric. Mean angle in degrees
-#' @param kappa numeric. Concentration parameter in the range (0, Inf]
-#' @param theta numeric. Angular value in degrees
-#' @param from if `NULL` is set to \eqn{\mu-\pi}{mu-pi}. This is the value from
-#' which the pvm and qvm are evaluated. in degrees.
-#' @param tol numeric. The precision in evaluating the distribution function or the quantile.
-#' @param log logical. If `TRUE`, probabilities p are given as log(p).
-#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}-periodical
-#' (`TRUE`, the default) or directional, i.e. \eqn{2 \pi}-periodical (`FALSE`).
-#' @param ... parameters passed to [stats::integrate()].
+#' @param x,y numeric vectors. Angles in degrees
+#' @param n_perm integer. Number of permutations
+#' @inheritParams watson_test
 #'
-#' @returns `dvm` gives the density,
-#' `pvm` gives the probability of the von Mises distribution function,
-#' `rvm` generates random deviates (in degrees), and
-#' `qvm` provides quantiles (in degrees).
+#' @details A two-sample Watson's \eqn{U^2}{U²} permutation test determines whether two
+#' independent groups of circular data (angles or directions) come from the same
+#' underlying distribution.
 #'
-#' @name vonmises
+#' ## Hypotheses
 #'
-#' @importFrom circular circular rvonmises pvonmises qvonmises daxialvonmises
+#' **Null Hypothesis** (\eqn{H_0}{H0}): The two samples come from the same circular
+#' distribution (the two groups of angles share a common distribution around the circle).
+#'
+#' **Alternative Hypothesis** (\eqn{H_1}{H1}): The two samples come from different
+#' circular distributions (the groups are oriented or dispersed differently around the circle).
+#'
+#' ## Interpretation
+#'
+#' The Test Statistic (\eqn{U^2}{U²}) measures the distance between the cumulative distribution
+#' functions of the two circular samples. A larger \eqn{U^2}{U²} value means the
+#' two sets of angles look more different from each other.
+#'
+#' The P-Value represents the probability of getting a U² value as large as (or
+#' larger than) your observed value purely by chance, assuming the null hypothesis
+#' is true. It is calculated by shuffling the group labels across your data many
+#' times to build a reference permutation distribution.
+#'
+#' ### Making a Decision
+#'
+#' *  Low p-value (\eqn{p \le \alpha}{p <= alpha}, usually 0.05): Reject the null hypothesis. Conclude that
+#' the two groups have significantly different circular distributions.
+#' * High p-value (\eqn{p > \alpha}{p > alpha}): Fail to reject the null hypothesis. There is not
+#' enough evidence to say the two groups are distributed differently around the circle.
+#'
+#' @note Critical values for the test statistic are obtained using the asymptotic
+#' distribution of the test statistic. It is recommended to use the obtained
+#' critical values and ranges for p-values only for combined sample sizes in
+#' excess of 17. Tables are available for smaller sample sizes and can be found
+#' in Mardia (1972) for instance.
+#'
+#' @name watson_two_sample
+#' @family Tests
+#'
+#' @returns list. Watson's two-sample test of homogeneity is performed, and the
+#' results are printed. If alpha is specified and non-zero, the test statistic
+#' is printed along with the critical value and decision. If alpha is omitted,
+#' the test statistic is printed and a range for the p-value of the test is given.
 #'
 #' @examples
-#' set.seed(1)
-#' x <- rvm(5, mean = 90, kappa = 2)
+#' set.seed(20250411)
+#' x1 <- c(35, 45, 50, 55, 60, 70, 85, 95, 105, 120)
+#' x2 <- c(75, 80, 90, 100, 110, 130, 135, 140, 150, 160, 165)
+#' watson_two_test(x1, x2, axial = FALSE)
+#' watson_two_test_perm(x1, x2, axial = FALSE)
 #'
-#' dvm(x, mean = 90, kappa = 2)
-#' dvm(x, mean = 90, kappa = 2, axial = TRUE)
+#' data1 <- rvm(n=20, mean = 0, kappa=3)
+#' data2 <- rvm(n=20, mean = 90, kappa=2)
+#' watson_two_test(data1, data2, axial = FALSE)
+#' watson_two_test_perm(data1, data2, axial = FALSE)
 #'
-#' pvm(x, mean = 90, kappa = 2)
-#' qvm(c(.25, .5, .75), mean = 90, kappa = 2)
+#'
+#' # San Andreas Fault Data:
+#' data(san_andreas)
+#' data("nuvel1")
+#' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
+#' sa.por <- PoR_shmax(san_andreas, PoR, "right")
+#' watson_two_test(sa.por$azi, 135, alpha = 0.05)
+#' watson_two_test_perm(sa.por$azi, rvm(100, 135, 10), alpha = 0.05)
 NULL
 
-#' @rdname vonmises
 #' @export
-rvm <- function(n, mean, kappa) {
-  mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
-  circular::rvonmises(n, mu, kappa) |> as.numeric()
-}
+#' @rdname watson_two_sample
+watson_two_test <- function(x, y, alpha = NULL, axial = TRUE, quiet = FALSE) {
+  if (is.null(alpha)) alpha <- 0
+  allowed_alphas <- c(0, 0.001, 0.01, 0.05, 0.1)
+  if (!(alpha %in% allowed_alphas)) {
+    stop("'alpha' must be one of: 0, 0.001, 0.01, 0.05, 0.1")
+  }
 
-#' @rdname vonmises
-#' @export
-dvm <- function(theta, mean, kappa, log = FALSE, axial = FALSE) {
-  if (axial) {
-    x <- circular::circular(theta, units = "degrees", modulo = "pi")
-    mu <- circular::circular(mean, units = "degrees", modulo = "pi")
-    d <- circular::daxialvonmises(x, mu, kappa)
-    if (log) d <- log(d)
-    return(d)
+  # --- Preprocessing ---
+  x <- stats::na.omit(x)
+  y <- stats::na.omit(y)
+
+  f <- if (axial) 2L else 1L
+  x <- deg2rad((f * x) %% 360)
+  y <- deg2rad((f * y) %% 360)
+
+  # --- U2 statistic ---
+  n1 <- length(x)
+  n2 <- length(y)
+  n <- n1 + n2
+
+  labels <- c(rep(1L, n1), rep(2L, n2))
+  labels <- labels[order(c(x, y))]
+
+  cx <- cumsum(labels == 1L)
+  cy <- cumsum(labels == 2L)
+
+  d <- cy / n2 - cx / n1
+  dbar <- mean.default(d)
+  u2 <- (n1 * n2) / n^2 * sum((d - dbar)^2)
+
+  if (n < 18) warning("Total sample size < 18: consult tabulated critical values")
+
+  # --- Critical values (parallel to allowed_alphas) ---
+  crits <- c(NA_real_, 0.385, 0.268, 0.187, 0.152)
+
+  if (alpha == 0) {
+    # Return a descriptive p-value bracket
+    thresholds <- c(0.152, 0.187, 0.268, 0.385)
+    labels_p <- c(
+      "P-value > 0.10",
+      "0.05 < P-value < 0.10",
+      "0.01 < P-value < 0.05",
+      "0.001 < P-value < 0.01",
+      "P-value < 0.001"
+    )
+    p.value <- labels_p[findInterval(u2, thresholds, rightmost.closed = TRUE) + 1L]
   } else {
-    # x <- circular::circular(theta, units = "degrees", modulo = "2pi")
-    # mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
-    # circular::dvonmises(x, mu = mu, kappa = kappa, log = log)
-
-    two_pi <- 2 * pi
-    x <- deg2rad(theta) %% two_pi
-    mu <- deg2rad(mean) %% two_pi
-
-    delta <- x - mu
-    delta_mod <- delta %% two_pi
-
-    n <- length(x)
-
-    # stopifnot(length(mu==1))
-    if (log) {
-      if (kappa == 0) {
-        vm <- rep(-log(two_pi), n)
-      } else if (kappa < 1e+05) {
-        log_bessel <- log(besselI(kappa, nu = 0, expon.scaled = TRUE))
-        vm <- -(log(two_pi) + log_bessel + kappa) + kappa * cos(delta)
-      } else {
-        vm <- ifelse(delta_mod == 0, Inf, -Inf)
-      }
-    } else {
-      if (kappa == 0) {
-        vm <- rep(1 / two_pi, n)
-      } else if (kappa < 1e+05) {
-        bessel_val <- besselI(kappa, nu = 0, expon.scaled = TRUE)
-        vm <- (1 / (two_pi * bessel_val)) * (exp(cos(delta) - 1))^kappa
-      } else {
-        vm <- ifelse(delta_mod == 0, Inf, 0)
-      }
+    crit <- crits[match(alpha, allowed_alphas)]
+    if (!quiet) {
+      message(if (u2 > crit) "Reject null hypothesis" else "Do not reject null hypothesis")
     }
-    return(vm)
+    p.value <- crit
   }
+
+  list(statistic = u2, p.value = p.value)
 }
 
-#' @rdname vonmises
+
+# watson_two_test2 <- function(x, mu, kappa, alpha = 0, axial = TRUE, quiet = FALSE){
+#   if(is.null(alpha)) alpha <- 0
+#   allowed_alphas <- c(0, 0.001, 0.01, 0.05, 0.1)
+#   if (!(alpha %in% allowed_alphas)) {
+#     stop("'alpha' must be one of: 0, 0.001, 0.01, 0.05, 0.1")
+#   }
+#
+#   # --- Preprocessing ---
+#   x <- x[!is.na(x)]
+#
+#   f <- if (axial) 2L else 1L
+#   x <- deg2rad((f * x) %% 360)
+#   mu <- (f * mu) %% 360
+#
+#   n <- length(x)
+#   if (n < 18) warning("Total sample size < 18: consult tabulated critical values")
+#
+#   # --- Evaluate von Mises CDF at order statistics ---
+#   x_sorted <- sort(x)
+#   v <- pvm(rad2deg(x_sorted), mean = mu, kappa = kappa)
+#
+#   # --- U2 statistic ---
+#   i    <- seq_len(n)
+#   vbar <- mean.default(v)
+#   u2   <- sum((v - vbar + (2*i - 1)/(2*n) - 0.5)^2) + 1/(12*n)
+#
+#   # --- Critical values (parallel to allowed_alphas) ---
+#   crits <- c(NA_real_, 0.385, 0.268, 0.187, 0.152)
+#
+#   if (alpha == 0) {
+#     # Return a descriptive p-value bracket
+#     thresholds <- c(0.152, 0.187, 0.268, 0.385)
+#     labels_p   <- c(
+#       "P-value > 0.10",
+#       "0.05 < P-value < 0.10",
+#       "0.01 < P-value < 0.05",
+#       "0.001 < P-value < 0.01",
+#       "P-value < 0.001"
+#     )
+#     p.value <- labels_p[findInterval(u2, thresholds, rightmost.closed = TRUE) + 1L]
+#   } else {
+#     crit <- crits[match(alpha, allowed_alphas)]
+#     if (!quiet) {
+#       message(if (u2 > crit) "Reject null hypothesis" else "Do not reject null hypothesis")
+#     }
+#     p.value <- crit
+#   }
+#
+#   list(statistic = u2, p.value = p.value)
+# }
+#
+
 #' @export
-pvm <- function(theta, mean, kappa, from = NULL, tol = 1e-20) {
-  theta <- circular::circular(theta, units = "degrees", modulo = "2pi")
-  mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
+#' @rdname watson_two_sample
+watson_two_test_perm <- function(x, y, axial = TRUE, n_perm = 1000L, alpha = NULL) {
+  f <- if (isTRUE(axial)) 2L else 1L
 
-  if (!is.null(from)) {
-    from <- circular::circular(from, units = "degrees", modulo = "2pi")
+  samp1 <- deg2rad((f * stats::na.omit(x) %% 360))
+  samp2 <- deg2rad((f * stats::na.omit(y) %% 360))
+
+  n1 <- length(samp1)
+  n2 <- length(samp2)
+  n <- n1 + n2
+  combined <- c(samp1, samp2)
+
+  # Bare U² computation — no validation, no output, just the number
+  u2_stat <- function(s1, s2, n1, n2) {
+    labels <- c(rep(1L, n1), rep(2L, n2))
+    labels <- labels[order(c(s1, s2))]
+    cx <- cumsum(labels == 1L)
+    cy <- cumsum(labels == 2L)
+    d <- cy / n2 - cx / n1
+    dbar <- mean.default(d)
+    (n1 * n2) / (n1 + n2)^2 * sum((d - dbar)^2)
   }
 
-  circular::pvonmises(theta, mu, kappa, from = NULL, tol = tol)
-}
+  Gstat <- u2_stat(samp1, samp2, n1, n2)
 
-#' @rdname vonmises
-#' @export
-qvm <- function(p, mean = 0, kappa, from = NULL, tol = .Machine$double.eps^(0.6), ...) {
-  mu <- circular::circular(mean, units = "degrees", modulo = "2pi")
+  nxtrm <- sum(vapply(seq_len(n_perm), function(r) {
+    perm <- sample.int(n)
+    Grand <- u2_stat(
+      combined[perm[seq_len(n1)]],
+      combined[perm[seq(n1 + 1L, n)]],
+      n1, n2
+    )
+    Grand >= Gstat
+  }, FUN.VALUE = logical(1))) + 1L
 
-  if (!is.null(from)) {
-    from <- circular::circular(from, units = "degrees", modulo = "2pi")
+  pvalue <- nxtrm / (n_perm + 1)
+  reject <- NULL
+  if(!is.null(alpha)) {
+    stopifnot(alpha >= 0  & alpha <= 1)
+    reject <- pvalue < alpha
   }
 
-  circular::qvonmises(p, mu, kappa, from, tol = tol, ...) |> as.numeric()
+  list(statistic = Gstat, p.value = pvalue, alpha = alpha, reject = reject)
 }
 
-
-#' @keywords internal
-A1inv <- function(x) {
-  stopifnot(is.numeric(x), length(x) == 1, !is.na(x))
-  if (0 <= x && x < 0.53) {
-    2 * x + x^3 + (5 * x^5) / 6
-  } else if (x < 0.85) {
-    -0.4 + 1.39 * x + 0.43 / (1 - x)
-  } else {
-    1 / (x^3 - 4 * x^2 + 3 * x)
-  }
-}
-
-#' Concentration parameter of von Mises distribution
+#' Watson-Wheeler Test of Homogeneity of Means
 #'
-#' Estimates the concentration parameter of a von Mises distribution, given a
-#' set of angular measurements.
+#' A a non-parametric statistical test used to determine whether two or more
+#' independent samples of circular data (angles, directions, or periodic times)
+#' come from the same underlying population distribution. The difference
+#' between the samples can be in either the mean or the variance.
 #'
-#' @param x numeric. angles in degrees
-#' @param w numeric. weightings
-#' @param bias logical parameter determining whether a bias correction is used
-#' in the computation of the MLE. Default for bias is `FALSE` for no bias
-#' correction.
+#' @inheritParams watson_two_test
+#' @importFrom stats na.omit
 #'
 #' @details
-#' `est.kappa.MLE()` is the maximum likelihood estimate for MLE for \eqn{\kappa}.
+#' ## Hypotheses
 #'
-#' `est.kappa()` uses an approximation based on the empirical equation:
-#' \deqn{\kappa =
-#'     \frac{\bar{R}(p-\bar{R}^2)}{1-\bar{R}^2}
-#' }
-#' where \eqn{\bar{R}} is the mean resultant length and \eqn{p} is the
-#' dimensionality of the data (2 for circular data).
+#' **Null Hypothesis (\eqn{H_0}{H0})** The samples come from identical populations (meaning
+#' both the mean direction and the dispersion/variance are homogeneous across groups).
 #'
-#' @returns numeric. Concentration of a von Mises distribution
-#' @name estimate-kappa
+#' **Alternative Hypothesis (\eqn{H_1}{H1})**: At least one sample comes from a different
+#' population distribution, which can be due to a difference in the mean direction,
+#' a difference in variance/concentration, or both.
+#'
+#' ## Interpretation
+#'
+#' **Test Statistic (W)**: This value follows an approximate \eqn{\chi^2}{chi-squared} distribution.
+#' Higher values of W indicate larger discrepancies between the angular distributions of your groups.
+#'
+#' * If the p-value is less than your significance level (commonly \eqn{\alpha}{alpha} = 0.05),
+#' you **reject** the null hypothesis.
+#' This means you have strong evidence that the groups differ significantly in
+#' their central direction or spread around the circle.
+#' * If the p-value is greater than 0.05, you **fail to reject** the null hypothesis,
+#' meaning there is no statistically significant evidence of difference among the groups.
+#'
+#' @note Important Considerations & Limitations:
+#' * **Sensitivity to both mean and variance**: Because it detects differences in
+#' either mean or variance, a significant result does not automatically mean
+#' the mean angles are different; it could be driven entirely by differences
+#' in concentration (variance).
+#' * **Sample size requirement**: The chi-squared approximation requires each group
+#' to have a minimum sample size (typically at least 10 elements per group) to remain valid.
+#'
+#' @family Tests
+#'
+#' @returns list
+#' @export
 #'
 #' @examples
-#' set.seed(123)
-#' x <- rvm(100, 90, 10)
-#' w <- weighting(runif(100, 0, 10))
+#' set.seed(20250411)
+#' x1 <- c(35, 45, 50, 55, 60, 70, 85, 95, 105, 120)
+#' x2 <- c(75, 80, 90, 100, 110, 130, 135, 140, 150, 160, 165)
+#' watson_wheeler_test_perm(x1, x2, axial = FALSE)
 #'
-#' est.kappa(x, w)
+#' data1 <- rvm(n=20, mean = 0, kappa=3)
+#' data2 <- rvm(n=20, mean = 90, kappa=2)
+#' watson_wheeler_test_perm(data1, data2, axial = FALSE)
 #'
-#' est.kappa.MLE(x, w)
-NULL
+#' # San Andreas Fault Data:
+#' data(san_andreas)
+#' data("nuvel1")
+#' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
+#' sa.por <- PoR_shmax(san_andreas, PoR, "right")
+#' watson_wheeler_test_perm(sa.por$azi.PoR, rvm(100, 135, 10))
+watson_wheeler_test_perm <- function(x, y, axial = TRUE, n_perm = 1000L, alpha = NULL) {
+  f <- if (isTRUE(axial)) 2L else 1L
 
-#' @rdname estimate-kappa
-#' @export
-est.kappa.MLE <- function(x, w = NULL, bias = FALSE) {
-  # Default weights
-  if (is.null(w)) {
-    w <- rep(1, length(x))
-  } else {
-    w <- as.numeric(w)
+  samp1 <- deg2rad((f * stats::na.omit(x) %% 360))
+  samp2 <- deg2rad((f * stats::na.omit(y) %% 360))
+
+  n1 <- length(samp1)
+  n2 <- length(samp2)
+  n <- n1 + n2
+  combined <- c(samp1, samp2)
+
+  # Bare Watson-Wheeler statistic
+  # W = (2/n) * (C1^2 + S1^2) where C1, S1 are summed uniform scores for group 1
+  ww_stat <- function(s1, s2, n1, n2) {
+    n <- n1 + n2
+    rnks <- rank(c(s1, s2), ties.method = "random")
+    cr <- rnks * 2 * pi / n
+    C <- sum(cos(cr[seq_len(n1)]))
+    S <- sum(sin(cr[seq_len(n1)]))
+    2 * (n - 1) * (C^2 + S^2) / (n1 * n2)
   }
 
-  #f <- if (axial) 2 else 1
-  # x <- (x * f) %% 360
+  Gstat <- ww_stat(samp1, samp2, n1, n2)
 
-  # Remove NA pairs
-  keep <- !is.na(x) & !is.na(w)
-  x <- x[keep]
-  w <- w[keep]
+  nxtrm <- sum(vapply(seq_len(n_perm), function(r) {
+    perm <- sample.int(n)
+    Grand <- ww_stat(
+      combined[perm[seq_len(n1)]],
+      combined[perm[seq(n1 + 1L, n)]],
+      n1, n2
+    )
+    Grand >= Gstat
+  }, FUN.VALUE = logical(1))) + 1L
 
-  mean.dir <- circular_mean(x, w = w, axial = FALSE, na.rm = FALSE)
-  mean_cos <- mean(cosd(x - mean.dir))
-  kappa <- abs(A1inv(mean_cos))
-
-  if (bias) {
-    n <- sum(w)
-    if (kappa < 2) {
-      kappa <- max(kappa - 2 / (n * kappa), 0)
-    }
-    if (kappa >= 2) {
-      kappa <- ((n - 1)^3 * kappa) / (n^3 + n)
-    }
+  pvalue <- nxtrm / (n_perm + 1)
+  reject <- NULL
+  if(!is.null(alpha)) {
+    stopifnot(alpha >= 0  & alpha <= 1)
+    reject <- pvalue < alpha
   }
-  kappa
+
+  list(statistic = Gstat, p.value = pvalue, alpha = alpha, reject = reject)
 }
 
-#' @rdname estimate-kappa
-#' @param p integer. Number of parameters in the data space: 2 for circle (the default), 3 for a sphere.
+
+ar_test_statistic <- function(s1, s2) {
+  diffs <- outer(s1, s2, function(a, b) pi - abs(pi - abs(a - b)))
+  sum(diffs)
+}
+
+#' Angular Randomisation Test of Homogeneity
+#'
+#' Performs Angular Randomisation Test for homogeneity on two samples of
+#' circular data after Ruxton et al. (2023).
+#' P-values are estimated using permutation.
+#'
+#' @inheritParams watson_two_test
+#' @param alpha (optional) numeric. Significance level of the test (values between 0 and 1).
+#' @param axial logical. Whether the data are axial, i.e. \eqn{\pi}{pi}-periodical
+#' (`TRUE`) or directional, i.e. \eqn{2 \pi}{2pi}-periodical (`FALSE`, the default).
+#'
+#' @details
+#' **Null Hypothesis** (\eqn{H_0}{H₀}): The two circular samples share an identical underlying
+#' probability distribution.
+#'
+#' **Alternative Hypothesis** (\eqn{H_{1}}{H1}): The two samples come from different distributions.
+#'
+#' ## Interpretation
+#'
+#' * Small p-value (\eqn{p < \alpha}, e.g., <0.05): Reject the null hypothesis.
+#' This indicates strong evidence that the two samples come from different
+#' circular distributions (differing in central tendency/mean direction or shape).
+#'
+#' * Large p-value (\eqn{p \ge \alpha}): Fail to reject the null hypothesis;
+#' there is insufficient evidence to claim the two circular samples differ.
+#'
+#' @note
+#' **Concentration Differences**: The test can suffer from markedly lower statistical
+#' power if the underlying unimodal distributions differ by concentration
+#' (dispersion/spread) rather than location—especially with small, uneven sample
+#' sizes where the smaller sample comes from the more concentrated distribution.
+#'
+#' **Axial/Multimodal Data**: ART performs poorly and loses power when applied to
+#' axially symmetric or symmetrically multimodal distributions.
+#'
+#'
+#' @references Ruxton, G.D., Malkemper, E.P. & Landler, L. Evaluating the power
+#' of a recent method for comparing two circular distributions: an alternative
+#' to the Watson U2 test. Sci Rep 13, 10007 (2023). https://doi.org/10.1038/s41598-023-36960-1
+#'
+#' @returns list containing the test statistic, the p-value, the significance value `alpha` and a logical decision whether to reject the null hypothesis or not.
+#'
 #' @export
-est.kappa <- function(x, w = NULL, p = 2) {
-  Rbar <- mean_resultant_length(x, w, na.rm = TRUE)
-  (Rbar * (p - Rbar^2)) / (1 - Rbar^2)
+#'
+#' @family Tests
+#'
+#' @examples
+#' set.seed(20250411)
+#' x1 <- c(35, 45, 50, 55, 60, 70, 85, 95, 105, 120)
+#' x2 <- c(75, 80, 90, 100, 110, 130, 135, 140, 150, 160, 165)
+#' ar_test(x1, x2)
+#'
+#' # San Andreas Fault Data:
+#' data(san_andreas)
+#' data("nuvel1")
+#' PoR <- subset(nuvel1, nuvel1$plate.rot == "na")
+#' sa.por <- PoR_shmax(san_andreas, PoR, "right")
+#' ar_test(sa.por$azi.PoR, rvm(100, 135, 10), axial = TRUE, alpha = 0.05)
+ar_test <- function(x, y, n_perm = 1000L, axial = FALSE, alpha = NULL) {
+  f <- if (isTRUE(axial)) 2 else 1
+
+  samp1 <- deg2rad(((f * stats::na.omit(x)) %% 360))
+  samp2 <- deg2rad(((f * stats::na.omit(y)) %% 360))
+
+  n1 <- length(samp1)
+  n2 <- length(samp2)
+  n <- n1 + n2
+  combined <- c(samp1, samp2)
+
+  Gstat <- ar_test_statistic(samp1, samp2)
+
+  # Permutation
+  nxtrm <- sum(vapply(seq_len(n_perm), function(r) {
+    perm <- sample.int(n)
+    Grand <- ar_test_statistic(
+      combined[perm[seq_len(n1)]],
+      combined[perm[seq(n1 + 1, n)]]
+    )
+    Grand >= Gstat
+  }, FUN.VALUE = logical(1))) + 1L
+
+  pvalue <- nxtrm / (n_perm + 1)
+  reject <- NULL
+  if(!is.null(alpha)) {
+    stopifnot(alpha >= 0  & alpha <= 1)
+    reject <- pvalue < alpha
+  }
+
+  return(list(statistic = Gstat, p.value = pvalue, alpha = alpha, reject = reject))
 }

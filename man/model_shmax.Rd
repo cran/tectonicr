@@ -26,17 +26,16 @@ great circles}
 }
 \description{
 Models the direction of maximum horizontal stress
-\eqn{\sigma_{Hmax}}{SHmax} along great circles, small circles, and
+\eqn{\sigma_\text{Hmax}}{SHmax} along great circles, small circles, and
 loxodromes at a given point or points according to the relative plate motion
 in the geographical coordinate reference system.
 }
 \details{
-\eqn{\sigma_{Hmax}}{SHmax} following \emph{great circles} is the
+\eqn{\sigma_\text{Hmax}}{SHmax} following \emph{great circles} is the
 (initial) bearing between the given point and the pole of relative plate
-motion. \eqn{\sigma_{Hmax}}{SHmax} along \emph{small circles}, clockwise, and
-counter-clockwise \emph{loxodromes} is 90\eqn{^{\circ}}{ degree},
-+45\eqn{^{\circ}}{ degree}, and 135\eqn{^{\circ}}{ degree}
-(-45\eqn{^{\circ}}{ degree}) to this great circle bearing, respectively.
+motion. \eqn{\sigma_\text{Hmax}}{SHmax} along \emph{small circles}, clockwise, and
+counter-clockwise \emph{loxodromes} is 90°,  +45°, and +135° (or -45°)
+to this great circle bearing, respectively.
 }
 \examples{
 data("nuvel1")
@@ -55,8 +54,8 @@ horizontal orientation of the crustal stress adjacent to plate boundaries".
 }
 \seealso{
 \code{\link[=deviation_shmax]{deviation_shmax()}} to compute the deviation of the modeled direction
-from the observed direction of \eqn{\sigma_{Hmax}}{SHmax}.
-\code{\link[=PoR_shmax]{PoR_shmax()}} to calculate the azimuth of \eqn{\sigma_{Hmax}}{SHmax}
+from the observed direction of \eqn{\sigma_\text{Hmax}}{SHmax}.
+\code{\link[=PoR_shmax]{PoR_shmax()}} to calculate the azimuth of \eqn{\sigma_\text{Hmax}}{SHmax}
 in the pole of rotation reference system.
 }
 \author{

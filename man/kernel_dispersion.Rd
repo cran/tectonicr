@@ -26,9 +26,11 @@ dispersion_grid(...)
 \arguments{
 \item{x}{\code{sf} object containing
 \describe{
-\item{azi}{Azimuth in degree}
-\item{unc}{Uncertainties of azimuth in degree}
-\item{prd}{Predicted value for azimuth}
+\item{azi}{the observed \eqn{\sigma_\text{Hmax}}{SHmax} in degree}
+\item{unc}{(optional) Uncertainties of ibserved SHmax in degree}
+\item{type}{(optional) Methods used for the determination of the direction
+of \eqn{\sigma_\text{Hmax}}{SHmax}}
+\item{prd}{the predicted \eqn{\sigma_\text{Hmax}}{SHmax} in degree}
 }}
 
 \item{stat}{The measurement of dispersion to be calculated. Either
@@ -39,30 +41,37 @@ statistic.}
 \item{grid}{(optional) Point object of class \code{sf}.}
 
 \item{lon_range, lat_range}{(optional) numeric vector specifying the minimum
-and maximum longitudes and latitudes (are ignored if \code{"grid"} is specified).}
+and maximum longitudes and latitudes (ignored if \code{grid} is specified).}
 
-\item{gridsize}{Numeric. Target spacing of the regular grid in decimal
-degree. Default is 2.5. (is ignored if \code{"grid"} is specified)}
+\item{gridsize}{numeric. Target spacing of the regular grid in decimal
+degree. Default is \code{2.5}. (is ignored if \code{grid} is specified)}
 
-\item{min_data}{Integer. Minimum number of data per bin. Default is \code{3}}
+\item{min_data}{integer. If the number of observations within distance
+\code{R_range} is less than \code{min_data}, a missing value \code{NA} will be generated.
+Default is \code{3} for \code{\link[=stress2grid]{stress2grid()}} and \code{4} for \code{\link[=stress2grid_stats]{stress2grid_stats()}}.}
 
 \item{max_data}{integer. The number of nearest observations that should be
 used for prediction, where "nearest" is defined in terms of the space of the
 spatial locations. Default is \code{Inf}.}
 
-\item{min_dist_threshold}{Numeric. Maximum distance (in km) of the grid point to the
-next data point. Default is 200}
+\item{min_dist_threshold}{numeric. Distance threshold for smallest distance
+of the prediction location to the next observation location.
+Default is \code{200} km.}
 
-\item{dist_threshold}{Numeric. Distance weight to prevent overweight of data
-nearby (\code{0} to \code{1}). Default is \code{0.1}}
+\item{dist_threshold}{numeric. Distance weight to prevent overweight of data
+nearby (0 to 1). Default is \code{0.1}}
 
 \item{stat_threshold}{numeric. Generates missing values when the kernel
 \code{stat} value exceeds this threshold. Default is \code{Inf}.}
 
-\item{R_range}{Numeric value or vector specifying the (adaptive) kernel
-half-width(s) as search radius (in km). Default is \code{seq(50, 1000, 50)}}
+\item{R_range}{numeric value or vector specifying the kernel half-width(s)
+search radii,
+i.e. the maximum distance from the prediction location to be used for
+prediction (in km). Default is \code{seq(50, 1000, 50)}. If combined with
+\code{max_data}, both criteria apply.}
 
-\item{...}{optional arguments to \code{\link[=dist_greatcircle]{dist_greatcircle()}}}
+\item{...}{arguments passed to \code{stat} functions \code{\link[=weighted_rayleigh]{weighted_rayleigh()}} or
+\code{\link[=circular_dispersion]{circular_dispersion()}}}
 }
 \value{
 \code{sf} object containing
@@ -90,6 +99,6 @@ san_andreas_por$prd <- 135
 kernel_dispersion(san_andreas_por) |> head()
 }
 \seealso{
-\code{\link[=circular_dispersion]{circular_dispersion()}}, \code{\link[=norm_chisq]{norm_chisq()}}, \code{\link[=rayleigh_test]{rayleigh_test()}}
+\code{\link[=circular_dispersion]{circular_dispersion()}}, \code{\link[=norm_chisq]{norm_chisq()}}, \code{\link[=weighted_rayleigh]{weighted_rayleigh()}}
 }
 \keyword{internal}

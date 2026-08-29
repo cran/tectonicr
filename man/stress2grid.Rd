@@ -26,7 +26,7 @@ stress2grid(
   mp = 1,
   dist_threshold = 0.1,
   R_range = seq(50, 1000, 50),
-  ...
+  axial = TRUE
 )
 
 stress2grid_stats(
@@ -50,19 +50,20 @@ stress2grid_stats(
   R_range = seq(50, 1000, 50),
   mode = FALSE,
   kappa = 10,
+  axial = TRUE,
   ...
 )
 }
 \arguments{
 \item{x}{\code{sf} object containing
 \describe{
-\item{azi}{SHmax in degree}
+\item{azi}{\eqn{\sigma_\text{Hmax}}{SHmax} in degree}
 \item{unc}{(optional) Uncertainties of SHmax in degree}
 \item{type}{(optional) Methods used for the determination of the direction
-of SHmax}
+of \eqn{\sigma_\text{Hmax}}{SHmax}}
 }}
 
-\item{stat}{whether the direction of interpolated SHmax is based on the
+\item{stat}{whether the direction of interpolated \eqn{\sigma_\text{Hmax}}{SHmax} is based on the
 circular mean and standard deviation (\code{"mean"}, the default), the
 quasi-circular median and quasi-interquartile range (\code{"median"}), or the
 orientation tensor based principal direction and dispersion ("tensor").}
@@ -119,19 +120,23 @@ i.e. the maximum distance from the prediction location to be used for
 prediction (in km). Default is \code{seq(50, 1000, 50)}. If combined with
 \code{max_data}, both criteria apply.}
 
-\item{...}{(optional) arguments to \code{\link[=dist_greatcircle]{dist_greatcircle()}}}
+\item{axial}{Logical. Whether angles in \code{x$azi} are uniaxial (\code{FALSE})
+or biaxial (\code{TRUE}, the default).}
 
 \item{mode}{logical. Should the circular mode be included in the statistical summary (slow)?}
 
 \item{kappa}{numeric. von Mises distribution concentration parameter used
 for the circular mode. Will be estimated using \code{\link[=est.kappa]{est.kappa()}} if not provided.}
+
+\item{...}{(optional) arguments to \code{\link[=circular_summary]{circular_summary()}}}
 }
 \value{
 \code{sf} object containing
 \describe{
 \item{lon,lat}{longitude and latitude in degrees}
 \item{azi}{Circular mean od median SHmax in degree}
-\item{sd}{Circular standard deviation or Quasi-IQR on the Circle of SHmax in degrees}
+\item{sd}{Circular standard deviation or Quasi-IQR on the Circle of
+\eqn{\sigma_\text{Hmax}}{SHmax} in degrees}
 \item{R}{Search radius in km}
 \item{mdr}{Mean distance between grid point and datapoints per search radius}
 \item{N}{Number of data points in search radius}
@@ -155,6 +160,11 @@ performance and more flexibility.
 \code{\link[=stress2grid_stats]{stress2grid_stats()}} is based on \code{\link[=stress2grid]{stress2grid()}} but calculates circular
 summary statistics (see \code{\link[=circular_summary]{circular_summary()}}).
 }
+\note{
+Although specialized for stress fields, this spatial interpolation
+algorithm can be applied to type of data. Please adjust the \code{axial} argument
+when applied to different, directional data sets.
+}
 \examples{
 data("san_andreas")
 
@@ -167,7 +177,7 @@ stress2grid(san_andreas, stat = "tensor") |> head()
 stress2grid(san_andreas, stat = "median", max_data = 5) |> head()
 
 \dontrun{
-stress2grid_stats(san_andreas) |> head()
+stress2grid_stats(san_andreas, mode = TRUE) |> head()
 }
 }
 \references{

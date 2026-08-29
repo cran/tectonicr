@@ -8,14 +8,14 @@ norm_chisq(obs, prd, unc)
 }
 \arguments{
 \item{obs}{Numeric vector containing the observed azimuth of
-\eqn{\sigma_{Hmax}}{SHmax},
+\eqn{\sigma_\text{Hmax}}{SHmax},
 same length as \code{prd}}
 
 \item{prd}{Numeric vector containing the modeled azimuths of
-\eqn{\sigma_{Hmax}}{SHmax}, i.e.
+\eqn{\sigma_\text{Hmax}}{SHmax}, i.e.
 the return object from \code{model_shmax()}}
 
-\item{unc}{Uncertainty of observed \eqn{\sigma_{Hmax}}{SHmax}, either a
+\item{unc}{Uncertainty of observed \eqn{\sigma_\text{Hmax}}{SHmax}, either a
 numeric vector or a number}
 }
 \value{
@@ -23,24 +23,23 @@ Numeric vector
 }
 \description{
 A quantitative comparison between the predicted and observed directions of
-\eqn{\sigma_{Hmax}}{SHmax} is obtained by the calculation of the average
-azimuth and by a normalized \eqn{\chi^2}{chi-squared} test.
+\eqn{\sigma_\text{Hmax}}{SHmax} is obtained by the calculation of the average
+azimuth and by a normalized \eqn{\chi^2}{chi-squared} test (Wdowsinki, 1998)
 }
 \details{
 The normalized \eqn{\chi^2}{chi-squared} test is
-\deqn{ {Norm} \chi^2_i =
- = \frac{
+\deqn{ \text{Norm} \chi^2_i = \frac{
    \sum^M_{i = 1} \left( \frac{\alpha_i - \alpha_{{predict}}}{\sigma_i}
    \right) ^2}
    {\sum^M_{i = 1} \left( \frac{90}{\sigma_i} \right) ^2 }}{
    (sum( ((obs-prd)/unc)^2 ) / sum( (90/unc)^2 )
    }
 The value of the chi-squared test statistic is a number between 0 and 1
-indicating the quality of the predicted \eqn{\sigma_{Hmax}}{SHmax}
+indicating the quality of the predicted \eqn{\sigma_\text{Hmax}}{SHmax}
 directions. Low values
 (\eqn{\le 0.15}) indicate good agreement,
 high values (\eqn{> 0.7}) indicate a systematic misfit between predicted and
-observed \eqn{\sigma_{Hmax}}{SHmax} directions.
+observed \eqn{\sigma_\text{Hmax}}{SHmax} directions.
 }
 \examples{
 data("nuvel1")
@@ -60,3 +59,14 @@ Wdowinski, S., 1998, A theory of intraplate
 tectonics. \emph{Journal of Geophysical Research: Solid Earth}, \strong{103},
 5037-5059, doi: 10.1029/97JB03390.
 }
+\seealso{
+Other Tests: 
+\code{\link{ar_test}()},
+\code{\link{kuiper_test}()},
+\code{\link{rayleigh-test}},
+\code{\link{watson_test}()},
+\code{\link{watson_two_sample}},
+\code{\link{watson_wheeler_test_perm}()},
+\code{\link{weighted-rayleigh-test}}
+}
+\concept{Tests}

@@ -32,9 +32,9 @@ PoR_stress2grid_stats(
 \arguments{
 \item{x}{\code{sf} object containing
 \describe{
-\item{azi}{SHmax in degree}
-\item{unc}{Uncertainties of SHmax in degree}
-\item{type}{Methods used for the determination of the orientation of SHmax}
+\item{azi}{\eqn{\sigma_\text{Hmax}}{SHmax} in degree}
+\item{unc}{Uncertainties of \eqn{\sigma_\text{Hmax}}{SHmax} in degree}
+\item{type}{Methods used for the determination of the orientation of \eqn{\sigma_\text{Hmax}}{SHmax}}
 }}
 
 \item{PoR}{Pole of Rotation. \code{data.frame} or object of class
@@ -50,7 +50,7 @@ coordinate range in the PoR (\code{TRUE}, the default) CRS or the geographical C
 and maximum longitudes and latitudes (are ignored if \code{grid} is specified).}
 
 \item{gridsize}{Numeric. Target spacing of the regular grid in decimal
-degree. Default is 2.5 (is ignored if \code{grid} is specified)}
+degree. Default is \code{2.5} (is ignored if \code{grid} is specified)}
 
 \item{remove_PoR}{logical. Whether PoR azimuths and coordinates will be
 removed from final output or not (the default.)}
@@ -63,9 +63,9 @@ removed from final output or not (the default.)}
 \item{lon,lat}{longitude and latitude in geographical CRS (in degrees)}
 \item{lon.PoR,lat.PoR}{longitude and latitude in PoR CRS (in degrees).
 Only if \code{remove_PoR=TRUE}}
-\item{azi}{geographical mean SHmax in degree}
-\item{azi.PoR}{PoR mean SHmax in degree. Only if \code{remove_PoR=TRUE}}
-\item{sd}{Standard deviation of SHmax in degrees}
+\item{azi}{geographical mean \eqn{\sigma_\text{Hmax}}{SHmax} in degree}
+\item{azi.PoR}{PoR mean \eqn{\sigma_\text{Hmax}}{SHmax} in degree. Only if \code{remove_PoR=TRUE}}
+\item{sd}{Standard deviation of \eqn{\sigma_\text{Hmax}}{SHmax} in degrees}
 \item{R}{Search radius in km}
 \item{mdr}{Mean distance of datapoints per search radius}
 \item{N}{Number of data points in search radius}
